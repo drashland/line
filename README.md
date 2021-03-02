@@ -1,6 +1,10 @@
-# Line
+<p align="center">
+  <img height="200" src="./logo.svg" alt="Line logo">
+  <h1 align="center">Line</h1>
+</p>
+<p align="center">A command-line interface (CLI) framework.</p>
 
-A command-line interface (CLI) framework.
+---
 
 ## Table of Contents
 
