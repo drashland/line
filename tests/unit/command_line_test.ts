@@ -107,6 +107,64 @@ Rhum.testPlan("command_line_test.ts", () => {
       Rhum.asserts.assertEquals(a2, e2);
     });
   });
+
+  Rhum.testSuite("getOption()", () => {
+    Rhum.testCase("can get an option", () => {
+      const commandLine = new CommandLine(
+        [
+          "run",
+          "hella",
+          "--option1", "hella",
+        ],
+        [subcommand1Arg],
+      );
+      const a1 = commandLine.getOption("--option1");
+      const e1 = "hella";
+      Rhum.asserts.assertEquals(a1, e1);
+    });
+
+    Rhum.testCase("can get multiple options", () => {
+      const commandLine = new CommandLine(
+        [
+          "run",
+          "hella",
+          "--option1", "he",
+          "--option2", "ll",
+          "--option3", "a",
+        ],
+        [subcommand1Arg],
+      );
+      const a1 = commandLine.getOption("--option1");
+      const e1 = "he";
+      Rhum.asserts.assertEquals(a1, e1);
+
+      const a2 = commandLine.getOption("--option2");
+      const e2 = "ll";
+      Rhum.asserts.assertEquals(a2, e2);
+
+      const a3 = commandLine.getOption("--option3");
+      const e3 = "a";
+      Rhum.asserts.assertEquals(a3, e3);
+    });
+
+    Rhum.testCase("can get options after the subcommand", () => {
+      const commandLine = new CommandLine(
+        [
+          "run",
+          "--option1", "hellaOption",
+          "hellaArg"
+        ],
+        [subcommand1Arg],
+      );
+      const a1 = commandLine.getOption("--option1");
+      const e1 = "hellaOption";
+      Rhum.asserts.assertEquals(a1, e1);
+
+      const a2 = commandLine.getArgument("[arg1]");
+      const e2 = "hellaArg";
+      Rhum.asserts.assertEquals(a2, e2);
+    });
+  });
 });
 
 Rhum.run();
