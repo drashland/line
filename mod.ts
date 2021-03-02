@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 export { CommandLine } from "./src/command_line.ts";
-export { Commander } from "./src/commander.ts";
+export { Line } from "./src/line.ts";
 export { Subcommand } from "./src/subcommand.ts";
 export { SubcommandOption } from "./src/subcommand_option.ts";
 
@@ -12,7 +12,7 @@ export { SubcommandOption } from "./src/subcommand_option.ts";
 ////////////////////////////////////////////////////////////////////////////////
 
 export type {
-  ICommanderConfigs,
+  ILineConfigs,
   ILogger,
   TLogMethod
 } from "./src/interfaces.ts";

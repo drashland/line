@@ -1,4 +1,4 @@
-import { Commander, Subcommand } from "../mod.ts";
+import { Line, Subcommand } from "../mod.ts";
 
 /**
  * The command line is the entire line entered by the user. For example, if the
@@ -9,7 +9,7 @@ export class CommandLine {
   /**
    * The CLI processing this command line.
    */
-  public cli: Commander;
+  public cli: Line;
 
   /**
    * The subcommand in this command line. This is the second argument in the
@@ -58,7 +58,7 @@ export class CommandLine {
    *
    * @param cli - See this.cli property.
    */
-  constructor(cli: Commander) {
+  constructor(cli: Line) {
     this.cli = cli;
     this.deno_args = Deno.args.slice();
 

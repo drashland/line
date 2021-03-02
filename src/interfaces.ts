@@ -18,7 +18,7 @@ export type TLogMethod = (message: string) => void;
  *
  * version - This CLI's version.
  */
-export interface ICommanderConfigs {
+export interface ILineConfigs {
   name: string;
   description: string;
   command: string;

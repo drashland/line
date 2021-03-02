@@ -1,11 +1,11 @@
 import { ConsoleLogger } from "../deps.ts";
 
-import { CommandLine, ICommanderConfigs, ILogger, Subcommand } from "../mod.ts";
+import { CommandLine, ILineConfigs, ILogger, Subcommand } from "../mod.ts";
 
 /**
  * A class to help build CLIs.
  */
-export class Commander {
+export class Line {
   /**
    * This CLI's main command (e.g., rhum).
    */
@@ -53,9 +53,9 @@ export class Commander {
   /**
    * Construct an object of this class.
    *
-   * @param configs - See ICommanderConfigs for more information.
+   * @param configs - See ILineConfigs for more information.
    */
-  constructor(configs: ICommanderConfigs) {
+  constructor(configs: ILineConfigs) {
     this.command = configs.command;
     this.name = configs.name;
     this.description = configs.description, this.version = configs.version;

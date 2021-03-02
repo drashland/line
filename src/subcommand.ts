@@ -1,4 +1,4 @@
-import { Commander, ILogger, SubcommandOption } from "../mod.ts";
+import { Line, ILogger, SubcommandOption } from "../mod.ts";
 
 /**
  * A class that represents a subcommand as an object.
@@ -7,7 +7,7 @@ export class Subcommand {
   /**
    * The CLI processing this subcommand.
    */
-  public cli: Commander;
+  public cli: Line;
 
   /**
    * This subcommand's description.
@@ -38,7 +38,7 @@ export class Subcommand {
    *
    * @param cli - See this.cli property.
    */
-  constructor(cli: Commander) {
+  constructor(cli: Line) {
     this.cli = cli;
   }
 

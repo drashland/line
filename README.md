@@ -1,4 +1,4 @@
-# Commander
+# Line
 
 A command-line interface (CLI) framework.
 
@@ -12,9 +12,9 @@ A command-line interface (CLI) framework.
 
 ```typescript
 import {
-  Commander,
+  Line,
   Subcommand,
-} from "https://raw.githubusercontent.com/drashland/services/v0.3.0/cli/commander/mod.ts";
+} from "https://deno.land/x/line/mod.ts";
 
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
@@ -55,7 +55,7 @@ class Write extends Subcommand {
   }
 }
 
-const service = new Commander({
+const service = new Line({
   command: "fm",
   name: "File Manager",
   description: "A file manager.",
