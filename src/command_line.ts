@@ -2,8 +2,8 @@ import { Commander, Subcommand } from "../mod.ts";
 
 /**
  * The command line is the entire line entered by the user. For example, if the
- * user enters "git commit -m 'test'", then that entire line is the command
- * line.
+ * user enters "git commit -m 'test'", then "git commit -m 'test'" is the entire
+ * command line.
  */
 export class CommandLine {
   /**
@@ -19,15 +19,20 @@ export class CommandLine {
   public subcommand: string;
 
   /**
-   * Storage to hold all arguments in the line. For example, if the user enters
-   * in "rhum run tests/ --filter-test-case hello arg2 arg3", then the arguments
-   * are "tests/", "arg2", and "arg3". "hello" is not an argument in this line.
-   * It is an option value.
+   * Storage to hold all arguments in this command line. For example, if the
+   * command "rhum run tests/ --ftc hello something bye" contains the following
+   * arguments: "tests/", "something", and "bye". "hello" is not an argument in
+   * this command line. It is the value of the "--ftc" option.
    *
-   * Each argument is associated with a name. The name comes from a subcommand's
-   * signature property. For example, if a subcommand defines a signature of
-   * "run [directory|file]" and the user enters in "rhum run tests", then this
-   * property will evaluate to { "[directory|file]": "tests" }.
+   * Furthermore, each argument is associated with a name. The name comes from a
+   * subcommand's signature property. For example, if "rhum" is the main command
+   * and there is a subcommand in this CLI that defines its signature property
+   * as "run [directory|file]", then the command "rhum run tests" will evaluate
+   * to the following in this property:
+   *
+   *   {
+   *     "[directory|file]": "tests"
+   *   }
    */
   protected arguments: { [key: string]: string | undefined } = {};
 
@@ -42,21 +47,25 @@ export class CommandLine {
   protected deno_flags: string[] = [];
 
   /**
-   * Storage to hold all options and their values in the line. For example, if
-   * the user enters in "rhum run tests/ --ftc hello --fts goodbye", then the
-   * options and values are "tests/", "arg2", and "arg3". "hello" is not an
-   * argument in this line.  It is an option value.
+   * Storage to hold all options and their values in the command line. For
+   * example, the command "rhum run tests/ --ftc hello --fts 'good goodbye'"
+   * will evaluate to the following in this property:
+   *
+   *   {
+   *     "--ftc": "hello",
+   *     "--fts": "good goodbye",
+   *   }
    */
   protected options: { [key: string]: string | undefined } = {};
 
   //////////////////////////////////////////////////////////////////////////////
-//////////////
+  // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
 
   /**
    * Construct an object of this class.
    *
-   * @param cli - The application this command line belongs to.
+   * @param cli - See this.cli property.
    */
   constructor(cli: Commander) {
     this.cli = cli;
@@ -124,42 +133,8 @@ export class CommandLine {
   //////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Match all of the subcommand's argument names to their respective arguments
-   * based on location in the command line. For example, the first element in
-   * the signature will be taken off, which is the subcommand name. Everything
-   * that follows the subcommand name will be the argument names. If the
-   * subcommand signature is ...
-   *
-   *     run [directory] {file} <something>
-   *
-   * ... and the arguments are ...
-   *
-   *     ["thisDir", "thisFile", "something"]
-   *
-   * ... then the "run" subcommand name will be taken off and the following
-   *     object will be created ...
-   *
-   *     {
-   *       "[directory]: "thisDir",
-   *       "{file}:      "thisFile",
-   *       "<something>: "something",
-   *     }
-   *
-   * Note that the argument names do contain their surrounding brackets.
+   * Extract all Deno flags from the arguments.
    */
-  protected matchArgumentsToNames(): void {
-    (this.cli.subcommands as (typeof Subcommand)[])
-      .forEach((subcommand: typeof Subcommand) => {
-        const sigSplit = (subcommand as unknown as Subcommand)
-          .signature
-          .split(" ");
-        sigSplit.shift();
-        for (let i = 0; i < sigSplit.length; i++) {
-          this.arguments[sigSplit[i]] = this.deno_args[i];
-        }
-      });
-  }
-
   protected extractDenoFlagsFromArguments(): void {
     // Extract all options from the line
     this.deno_args.forEach((datum: string) => {
@@ -191,6 +166,9 @@ export class CommandLine {
     }
   }
 
+  /**
+   * Extract all options and their values from Deno.args.
+   */
   protected extractOptionsFromArguments(): void {
     // Extract all options from the line
     this.deno_args.forEach((datum: string) => {
@@ -210,5 +188,42 @@ export class CommandLine {
       // Remove the option from the line because it now has a name and a value
       this.deno_args.splice(index, 1);
     }
+  }
+
+  /**
+   * Match all of the subcommand's argument names to their respective arguments
+   * based on location in the command line. For example, the first element in
+   * the signature will be taken off, which is the subcommand name. Everything
+   * that follows the subcommand name will be the argument names. If the
+   * subcommand signature is ...
+   *
+   *     run [directory] {file} <something>
+   *
+   * ... and the arguments are ...
+   *
+   *     ["thisDir", "thisFile", "something"]
+   *
+   * ... then the "run" subcommand name will be taken off and the following
+   *     object will be created ...
+   *
+   *     {
+   *       "[directory]: "thisDir",
+   *       "{file}: "thisFile",
+   *       "<something>: "something",
+   *     }
+   *
+   * Note that the argument names do contain their surrounding brackets.
+   */
+  protected matchArgumentsToNames(): void {
+    (this.cli.subcommands as (typeof Subcommand)[])
+      .forEach((subcommand: typeof Subcommand) => {
+        const sigSplit = (subcommand as unknown as Subcommand)
+          .signature
+          .split(" ");
+        sigSplit.shift();
+        for (let i = 0; i < sigSplit.length; i++) {
+          this.arguments[sigSplit[i]] = this.deno_args[i];
+        }
+      });
   }
 }

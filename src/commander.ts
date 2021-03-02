@@ -1,11 +1,6 @@
 import { ConsoleLogger } from "../deps.ts";
 
-import {
-  CommandLine,
-  ICommanderConfigs,
-  ILogger,
-  Subcommand,
-} from "../mod.ts";
+import { CommandLine, ICommanderConfigs, ILogger, Subcommand } from "../mod.ts";
 
 /**
  * A class to help build CLIs.

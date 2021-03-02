@@ -1,5 +1,8 @@
 import { Subcommand } from "../mod.ts";
 
+/**
+ * The signature of the logger's methods.
+ */
 type TLogMethod = (messag: string) => void;
 
 /**

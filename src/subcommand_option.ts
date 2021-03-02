@@ -1,11 +1,33 @@
 import { Subcommand } from "./subcommand.ts";
 
+/**
+ * A class that represents a subcommand's option as an object.
+ */
 export class SubcommandOption {
+  /**
+   * The subcommand this option belongs to.
+   */
   public subcommand: Subcommand;
-  public name: string = "";
-  public description: string = "";
-  public signature: string = "";
 
+  /**
+   * This option's name. For example, "--my-cool-option".
+   */
+  public name: string = "";
+
+  /**
+   * This option's description.
+   */
+  public description: string = "";
+
+  //////////////////////////////////////////////////////////////////////////////
+  // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Construct an object of this class.
+   *
+   * @param subcommand - This this.subcommand property.
+   */
   constructor(subcommand: Subcommand) {
     this.subcommand = subcommand;
   }
