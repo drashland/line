@@ -38,6 +38,9 @@ export interface ICommanderConfigs {
  * warn - Log an warning message. Outputs "WARN some message".
  */
 export interface ILogger {
+  /**
+   * Test
+   */
   debug: TLogMethod;
   error: TLogMethod;
   info: TLogMethod;
