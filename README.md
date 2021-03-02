@@ -5,8 +5,6 @@ A service to help build command-line interfaces (CLIs).
 ## Table of Contents
 
 - [Quickstart](#quickstart)
-- [Tutorials](#tutorials)
-    - [Adding Options](#adding-options)
 
 ## Quickstart
 
