@@ -1,12 +1,10 @@
 # Commander
 
-A service to help build command-line interfaces (CLIs).
+A command-line interface (CLI) framework.
 
 ## Table of Contents
 
 - [Quickstart](#quickstart)
-- [Tutorials](#tutorials)
-    - [Adding Options](#adding-options)
 
 ## Quickstart
 
