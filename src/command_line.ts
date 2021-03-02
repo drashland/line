@@ -174,10 +174,10 @@ export class CommandLine {
    * based on location in the command line. For example, the first element in
    * the signature will be taken off, which is the subcommand name. Everything
    * that follows the subcommand name will be the argument names. For example,
-   * if the subcommand's signature is "run [directory] {file} <something>", and
-   * the arguments in Deno.args are "['thisDir', 'thisFile', 'something']", then
-   * the "run" subcommand name will be taken off and the following object will
-   * be created: { "[directory]: "thisDir", "{file}: "thisFile" }.
+   * if the subcommand's signature is "run <directory> {file}", and the
+   * arguments in Deno.args are "['thisDir', 'thisFile']", then the "run"
+   * subcommand name will be taken off and the following object will be created:
+   * { "<directory>: "thisDir", "{file}: "thisFile" }.
    *
    * Note that the argument names contain their surrounding brackets.
    */
