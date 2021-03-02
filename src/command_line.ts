@@ -27,12 +27,8 @@ export class CommandLine {
    * Furthermore, each argument is associated with a name. The name comes from a
    * subcommand's signature property. For example, if "rhum" is the main command
    * and there is a subcommand in this CLI that defines its signature property
-   * as "run [directory|file]", then the command "rhum run tests" will evaluate
-   * to the following in this property:
-   *
-   *   {
-   *     "[directory|file]": "tests"
-   *   }
+   * as "run [directory|file]", then the command "rhum run tests" will become
+   * { "[directory|file]": "tests" } in this property.
    */
   protected arguments: { [key: string]: string | undefined } = {};
 
@@ -49,12 +45,7 @@ export class CommandLine {
   /**
    * Storage to hold all options and their values in the command line. For
    * example, the command "rhum run tests/ --ftc hello --fts 'good goodbye'"
-   * will evaluate to the following in this property:
-   *
-   *   {
-   *     "--ftc": "hello",
-   *     "--fts": "good goodbye",
-   *   }
+   * will become { "--ftc": "hello", "--fts": "good goodbye" } in this property.
    */
   protected options: { [key: string]: string | undefined } = {};
 
@@ -86,15 +77,12 @@ export class CommandLine {
   //////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Get an argument taken from Deno.args.
+   * Get an argument from Deno.args.
    *
    * @param argumentName - The name of the argument to get. The name of the
    * argument should match the argument's signature in a subcommand's signature
-   * property. For example, if the signature is ...
-   *
-   *     run [some-cool-arg]
-   *
-   * ... then the argument name would be "[some-cool-arg]".
+   * property. For example, if the signature is "run [some-cool-arg]", then the
+   * argument name would be "[some-cool-arg]".
    *
    * @returns The argument's value or null if it has no value.
    */
@@ -112,15 +100,9 @@ export class CommandLine {
   }
 
   /**
-   * Get an option taken from Deno.args.
+   * Get an option from Deno.args.
    *
-   * @param argumentName - The name of the option to get. The name of the
-   * option should match the options's signature in a subcommand's option's
-   * signature property. For example, if the signature is ...
-   *
-   *     --some-cool-option [some-cool-value]
-   *
-   * ... then the option name would be "--some-cool-option".
+   * @param optionName - The name of the option to get.
    *
    * @returns The option's value or null if it has no value.
    */
@@ -136,7 +118,6 @@ export class CommandLine {
    * Extract all Deno flags from the arguments.
    */
   protected extractDenoFlagsFromArguments(): void {
-    // Extract all options from the line
     this.deno_args.forEach((datum: string) => {
       if (datum.includes("-A")) {
         this.deno_flags.push("-A");
@@ -156,9 +137,8 @@ export class CommandLine {
     });
 
     for (const index in this.deno_flags) {
-      const flag = this.deno_flags[index];
-
       // Get the location of the flag in the line
+      const flag = this.deno_flags[index];
       const flagIndex = this.deno_args.indexOf(flag);
 
       // Remove the flag from the line
@@ -170,7 +150,6 @@ export class CommandLine {
    * Extract all options and their values from Deno.args.
    */
   protected extractOptionsFromArguments(): void {
-    // Extract all options from the line
     this.deno_args.forEach((datum: string) => {
       if (datum.includes("--")) {
         this.options[datum] = undefined;
@@ -194,25 +173,13 @@ export class CommandLine {
    * Match all of the subcommand's argument names to their respective arguments
    * based on location in the command line. For example, the first element in
    * the signature will be taken off, which is the subcommand name. Everything
-   * that follows the subcommand name will be the argument names. If the
-   * subcommand signature is ...
+   * that follows the subcommand name will be the argument names. For example,
+   * if the subcommand's signature is "run [directory] {file} <something>", and
+   * the arguments in Deno.args are "['thisDir', 'thisFile', 'something']", then
+   * the "run" subcommand name will be taken off and the following object will
+   * be created: { "[directory]: "thisDir", "{file}: "thisFile" }.
    *
-   *     run [directory] {file} <something>
-   *
-   * ... and the arguments are ...
-   *
-   *     ["thisDir", "thisFile", "something"]
-   *
-   * ... then the "run" subcommand name will be taken off and the following
-   *     object will be created ...
-   *
-   *     {
-   *       "[directory]: "thisDir",
-   *       "{file}: "thisFile",
-   *       "<something>: "something",
-   *     }
-   *
-   * Note that the argument names do contain their surrounding brackets.
+   * Note that the argument names contain their surrounding brackets.
    */
   protected matchArgumentsToNames(): void {
     (this.cli.subcommands as (typeof Subcommand)[])

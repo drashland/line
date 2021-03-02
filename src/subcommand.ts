@@ -129,7 +129,6 @@ export class Subcommand {
     (this.options as unknown as (typeof SubcommandOption)[])
       .filter((option: typeof SubcommandOption) => {
         const o = new option(this);
-        o.name = o.signature.split(" ")[0];
         options.push(o);
       });
 
