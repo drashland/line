@@ -138,18 +138,24 @@ export class Subcommand {
   /**
    * Show this subcommand's help menu.
    */
-  public showHelp(): void {
+  public showHelp(returnOutput = false): string|void {
     let help = `USAGE\n\n`;
 
     help +=
       `    ${this.cli.command} ${this.signature} [deno flags] [options]\n`;
     help += "\n";
 
-    help += "OPTIONS\n\n";
-    (this.options as SubcommandOption[]).forEach((option: SubcommandOption) => {
-      help += `    ${option.name}\n`;
-      help += `        ${option.description}\n`;
-    });
+    if (this.options.length > 0) {
+      help += "OPTIONS\n\n";
+      (this.options as SubcommandOption[]).forEach((option: SubcommandOption) => {
+        help += `    ${option.name}\n`;
+        help += `        ${option.description}\n`;
+      });
+    }
+
+    if (returnOutput) {
+      return help;
+    }
 
     console.log(help);
   }

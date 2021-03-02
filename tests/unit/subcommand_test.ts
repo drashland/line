@@ -195,6 +195,40 @@ Rhum.testPlan("subcommand_test.ts", () => {
       }
     });
   });
+
+  Rhum.testSuite("showHelp()", () => {
+    Rhum.testCase("help is created properly", () => {
+      let subcommand: Subcommand|null;
+
+      subcommand = l.getSubcommand("write");
+      if (subcommand) {
+        const actual = subcommand.showHelp(true);
+        const expected = `USAGE
+
+    lt write [a] [b] [c] [deno flags] [options]
+
+OPTIONS
+
+    --filter
+        Filter something.
+    --verbose
+        Verbose something.
+`;
+        Rhum.asserts.assertEquals(actual, expected);
+      }
+
+      subcommand = l.getSubcommand("read");
+      if (subcommand) {
+        const actual = subcommand.showHelp(true);
+        const expected = `USAGE
+
+    lt read [arg1] [deno flags] [options]
+
+`;
+        Rhum.asserts.assertEquals(actual, expected);
+      }
+    });
+  });
 });
 
 Rhum.run();
