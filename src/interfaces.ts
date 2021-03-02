@@ -3,7 +3,7 @@ import { Subcommand } from "../mod.ts";
 /**
  * The signature of the logger's methods.
  */
-export type TLogMethod = (messag: string) => void;
+export type TLogMethod = (message: string) => void;
 
 /**
  * This CLI's configs.
@@ -38,9 +38,6 @@ export interface ICommanderConfigs {
  * warn - Log an warning message. Outputs "WARN some message".
  */
 export interface ILogger {
-  /**
-   * Test
-   */
   debug: TLogMethod;
   error: TLogMethod;
   info: TLogMethod;
