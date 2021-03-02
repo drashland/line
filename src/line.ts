@@ -39,7 +39,7 @@ export class Line {
   /**
    * This CLI's subcommands.
    */
-  public subcommands: (typeof Subcommand[] | Subcommand[]) = [];
+  public subcommands: Subcommand[];
 
   /**
    * This CLI's version.
@@ -59,11 +59,12 @@ export class Line {
     this.command = configs.command;
     this.name = configs.name;
     this.description = configs.description, this.version = configs.version;
-    this.subcommands = configs.subcommands;
+    this.subcommands = this.instantiateSubcommands(configs.subcommands);
 
-    this.instantiateSubcommands();
-
-    this.command_line = new CommandLine(this);
+    this.command_line = new CommandLine(
+      Deno.args.slice(),
+      this.subcommands
+    );
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -124,8 +125,8 @@ export class Line {
           console.log(availOptions);
 
           let availSubcommands = `AVAILABLE SUBCOMMANDS\n\n`;
-          (this.subcommands as typeof Subcommand[]).forEach(
-            (subcommand: typeof Subcommand) => {
+          this.subcommands.forEach(
+            (subcommand: Subcommand) => {
               availSubcommands += `    ${subcommand.name}\n`;
             },
           );
@@ -162,17 +163,18 @@ export class Line {
   /**
    * Take the subcommands array and instantiate all classes inside of it.
    */
-  protected instantiateSubcommands(): void {
-    let subcommands: Subcommand[] = [];
+  protected instantiateSubcommands(
+    subcommands: typeof Subcommand[]
+  ): Subcommand[] {
+    let ret: Subcommand[] = [];
 
-    (this.subcommands as unknown as (typeof Subcommand)[])
-      .filter((subcommand: typeof Subcommand) => {
-        const s = new subcommand(this);
-        s.name = s.signature.split(" ")[0];
-        subcommands.push(s);
-      });
+    subcommands.filter((subcommand: typeof Subcommand) => {
+      const s = new subcommand(this);
+      s.name = s.signature.split(" ")[0];
+      ret.push(s);
+    });
 
-    this.subcommands = subcommands;
+    return ret;
   }
 
   /**

@@ -7,18 +7,6 @@ import { Line, Subcommand } from "../mod.ts";
  */
 export class CommandLine {
   /**
-   * The CLI processing this command line.
-   */
-  public cli: Line;
-
-  /**
-   * The subcommand in this command line. This is the second argument in the
-   * command line. For example, "commit" is the subcommand in the command "git
-   * commit".
-   */
-  public subcommand: string;
-
-  /**
    * Storage to hold all arguments in this command line. For example, the
    * command "rhum run tests/ --ftc hello something bye" contains the following
    * arguments: "tests/", "something", and "bye". "hello" is not an argument in
@@ -30,7 +18,21 @@ export class CommandLine {
    * as "run [directory|file]", then the command "rhum run tests" will become
    * { "[directory|file]": "tests" } in this property.
    */
-  protected arguments: { [key: string]: string | undefined } = {};
+  public arguments: { [key: string]: string | undefined } = {};
+
+  /**
+   * Storage to hold all options and their values in the command line. For
+   * example, the command "rhum run tests/ --ftc hello --fts 'good goodbye'"
+   * will become { "--ftc": "hello", "--fts": "good goodbye" } in this property.
+   */
+  public options: { [key: string]: string | undefined } = {};
+
+  /**
+   * The subcommand in this command line. This is the second argument in the
+   * command line. For example, "commit" is the subcommand in the command "git
+   * commit".
+   */
+  public subcommand: string;
 
   /**
    * See https://doc.deno.land/builtin/stable#Deno.args.
@@ -42,13 +44,6 @@ export class CommandLine {
    */
   protected deno_flags: string[] = [];
 
-  /**
-   * Storage to hold all options and their values in the command line. For
-   * example, the command "rhum run tests/ --ftc hello --fts 'good goodbye'"
-   * will become { "--ftc": "hello", "--fts": "good goodbye" } in this property.
-   */
-  protected options: { [key: string]: string | undefined } = {};
-
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
@@ -56,11 +51,12 @@ export class CommandLine {
   /**
    * Construct an object of this class.
    *
-   * @param cli - See this.cli property.
+   * @param denoArgs - See this.deno_args property.
+   * @param subcommands - Used to match subcommand arguments to arguments in the
+   * command line.
    */
-  constructor(cli: Line) {
-    this.cli = cli;
-    this.deno_args = Deno.args.slice();
+  constructor(denoArgs: string[], subcommands: Subcommand[]) {
+    this.deno_args = denoArgs;
 
     // The second argument is always the subcommand
     this.subcommand = this.deno_args.shift() as string;
@@ -69,7 +65,7 @@ export class CommandLine {
 
     this.extractOptionsFromArguments();
 
-    this.matchArgumentsToNames();
+    this.matchArgumentsToNames(subcommands);
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -181,13 +177,12 @@ export class CommandLine {
    *
    * Note that the argument names contain their surrounding brackets.
    */
-  protected matchArgumentsToNames(): void {
-    (this.cli.subcommands as (typeof Subcommand)[])
-      .forEach((subcommand: typeof Subcommand) => {
-        const sigSplit = (subcommand as unknown as Subcommand)
-          .signature
-          .split(" ");
-        sigSplit.shift();
+  protected matchArgumentsToNames(subcommands: Subcommand[]): void {
+    subcommands.forEach((subcommand: Subcommand) => {
+        const sigSplit = subcommand.signature.split(" ");
+        sigSplit.shift(); // Take off the subcommand and leave only the args
+
+        // Match arguments in the signature to arguments in the command line
         for (let i = 0; i < sigSplit.length; i++) {
           this.arguments[sigSplit[i]] = this.deno_args[i];
         }
