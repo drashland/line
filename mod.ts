@@ -11,4 +11,8 @@ export { SubcommandOption } from "./src/subcommand_option.ts";
 // FILE MARKER - TYPES /////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-export type { ICommanderConfigs, ILogger } from "./src/interfaces.ts";
+export type {
+  ICommanderConfigs,
+  ILogger,
+  TLogMethod
+} from "./src/interfaces.ts";
