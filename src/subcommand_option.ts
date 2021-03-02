@@ -26,7 +26,7 @@ export class SubcommandOption {
   /**
    * Construct an object of this class.
    *
-   * @param subcommand - This this.subcommand property.
+   * @param subcommand - See this.subcommand property.
    */
   constructor(subcommand: Subcommand) {
     this.subcommand = subcommand;
