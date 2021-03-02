@@ -1,20 +1,56 @@
 import { Commander, Subcommand } from "../mod.ts";
 
+/**
+ * The command line is the entire line entered by the user. For example, if the
+ * user enters "git commit -m 'test'", then that entire line is the command
+ * line.
+ */
 export class CommandLine {
+  /**
+   * The CLI processing this command line.
+   */
   public cli: Commander;
 
+  /**
+   * The subcommand in this command line. This is the second argument in the
+   * command line. For example, if the user enters "git commit", then the
+   * subcommand is "commit".
+   */
   public subcommand: string;
 
-  protected deno_args: string[];
-
-  protected deno_flags: string[] = [];
-
+  /**
+   * Storage to hold all arguments in the line. For example, if the user enters
+   * in "rhum run tests/ --filter-test-case hello arg2 arg3", then the arguments
+   * are "tests/", "arg2", and "arg3". "hello" is not an argument in this line.
+   * It is an option value.
+   *
+   * Each argument is associated with a name. The name comes from a subcommand's
+   * signature property. For example, if a subcommand defines a signature of
+   * "run [directory|file]" and the user enters in "rhum run tests", then this
+   * property will evaluate to { "[directory|file]": "tests" }.
+   */
   protected arguments: { [key: string]: string | undefined } = {};
 
+  /**
+   * See https://doc.deno.land/builtin/stable#Deno.args.
+   */
+  protected deno_args: string[];
+
+  /**
+   * See https://deno.land/manual/getting_started/permissions#permissions-list.
+   */
+  protected deno_flags: string[] = [];
+
+  /**
+   * Storage to hold all options and their values in the line. For example, if
+   * the user enters in "rhum run tests/ --ftc hello --fts goodbye", then the
+   * options and values are "tests/", "arg2", and "arg3". "hello" is not an
+   * argument in this line.  It is an option value.
+   */
   protected options: { [key: string]: string | undefined } = {};
 
   //////////////////////////////////////////////////////////////////////////////
-  // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
+//////////////
   //////////////////////////////////////////////////////////////////////////////
 
   /**
