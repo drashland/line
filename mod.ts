@@ -4,7 +4,6 @@
 
 export { CommandLine } from "./src/command_line.ts";
 export { Commander } from "./src/commander.ts";
-export { ConsoleLogger } from "../../loggers/console_logger.ts";
 export { Subcommand } from "./src/subcommand.ts";
 export { SubcommandOption } from "./src/subcommand_option.ts";
 

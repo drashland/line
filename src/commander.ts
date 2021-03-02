@@ -1,6 +1,7 @@
+import { ConsoleLogger } from "../deps.ts";
+
 import {
   CommandLine,
-  ConsoleLogger,
   ICommanderConfigs,
   ILogger,
   Subcommand,
