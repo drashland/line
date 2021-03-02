@@ -121,6 +121,9 @@ export class CommandLine {
       if (datum == "--allow-all") {
         this.deno_flags.push("--allow-all");
       }
+      if (datum == "--allow-net") {
+        this.deno_flags.push("--allow-net");
+      }
       if (datum == "--allow-read") {
         this.deno_flags.push("--allow-read");
       }

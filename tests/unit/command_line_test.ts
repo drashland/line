@@ -59,6 +59,54 @@ Rhum.testPlan("command_line_test.ts", () => {
       Rhum.asserts.assertEquals(actual, expected);
     });
   });
+
+  Rhum.testSuite("getDenoFlags()", () => {
+    Rhum.testCase("gets Deno flags after subcommand", () => {
+      const commandLine = new CommandLine(
+        ["run", "--allow-all", "hella"],
+        [subcommand1Arg],
+      );
+      const a1 = commandLine.getArgument("[arg1]");
+      const e1 = "hella";
+      Rhum.asserts.assertEquals(a1, e1);
+
+      const a2 = commandLine.getDenoFlags();
+      const e2 = ["--allow-all"];
+      Rhum.asserts.assertEquals(a2, e2);
+    });
+
+    Rhum.testCase("gets Deno flags after subcommand argument", () => {
+      const commandLine = new CommandLine(
+        ["run", "hella", "--allow-all"],
+        [subcommand1Arg],
+      );
+      const a1 = commandLine.getArgument("[arg1]");
+      const e1 = "hella";
+      Rhum.asserts.assertEquals(a1, e1);
+
+      const a2 = commandLine.getDenoFlags();
+      const e2 = ["--allow-all"];
+      Rhum.asserts.assertEquals(a2, e2);
+    });
+
+    Rhum.testCase("gets only recognized Deno flags", () => {
+      const commandLine = new CommandLine(
+        [
+          "run",
+          "hella",
+          "--allow-read", "--allow-run", "--allow-write", "--allow-net"
+        ],
+        [subcommand1Arg],
+      );
+      const a1 = commandLine.getArgument("[arg1]");
+      const e1 = "hella";
+      Rhum.asserts.assertEquals(a1, e1);
+
+      const a2 = commandLine.getDenoFlags();
+      const e2 = ["--allow-read", "--allow-run", "--allow-write", "--allow-net"];
+      Rhum.asserts.assertEquals(a2, e2);
+    });
+  });
 });
 
 Rhum.run();
