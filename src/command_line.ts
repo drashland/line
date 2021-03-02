@@ -13,13 +13,13 @@ export class CommandLine {
 
   /**
    * The subcommand in this command line. This is the second argument in the
-   * command line. For example, if the user enters "git commit", then the
-   * subcommand is "commit".
+   * command line. For example, "commit" is the subcommand in the command "git
+   * commit".
    */
   public subcommand: string;
 
   /**
-   * Storage to hold all arguments in this command line. For example, if the
+   * Storage to hold all arguments in this command line. For example, the
    * command "rhum run tests/ --ftc hello something bye" contains the following
    * arguments: "tests/", "something", and "bye". "hello" is not an argument in
    * this command line. It is the value of the "--ftc" option.
