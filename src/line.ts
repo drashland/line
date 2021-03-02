@@ -94,6 +94,22 @@ export class Line {
   }
 
   /**
+   * Get a subcommand.
+   *
+   * @param subcommandName - The name of the subcommand to get.
+   *
+   * @returns The subcommand or null if not found.
+   */
+  public getSubcommand(subcommandName: string): null | Subcommand {
+    const results = (this.subcommands as Subcommand[])
+      .filter((subcommand: Subcommand) => {
+        return subcommand.name == subcommandName;
+      });
+
+    return results[0] ?? null;
+  }
+
+  /**
    * Run this CLI.
    */
   public run(): void {
@@ -143,22 +159,6 @@ export class Line {
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - METHODS - PROTECTED /////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * Get a subcommand.
-   *
-   * @param subcommandName - The name of the subcommand to get.
-   *
-   * @returns The subcommand or null if not found.
-   */
-  protected getSubcommand(subcommandName: string): null | Subcommand {
-    const results = (this.subcommands as Subcommand[])
-      .filter((subcommand: Subcommand) => {
-        return subcommand.name == subcommandName;
-      });
-
-    return results[0] ?? null;
-  }
 
   /**
    * Take the subcommands array and instantiate all classes inside of it.
