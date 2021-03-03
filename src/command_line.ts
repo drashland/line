@@ -133,6 +133,9 @@ export class CommandLine {
       if (datum == "--allow-write") {
         this.deno_flags.push("--allow-write");
       }
+      if (datum.includes("--reload")) {
+        this.deno_flags.push("--reload");
+      }
     });
 
     for (const index in this.deno_flags) {
