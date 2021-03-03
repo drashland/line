@@ -94,7 +94,10 @@ Rhum.testPlan("command_line_test.ts", () => {
         [
           "run",
           "hella",
-          "--allow-read", "--allow-run", "--allow-write", "--allow-net"
+          "--allow-read",
+          "--allow-run",
+          "--allow-write",
+          "--allow-net",
         ],
         [subcommand1Arg],
       );
@@ -103,7 +106,12 @@ Rhum.testPlan("command_line_test.ts", () => {
       Rhum.asserts.assertEquals(a1, e1);
 
       const a2 = commandLine.getDenoFlags();
-      const e2 = ["--allow-read", "--allow-run", "--allow-write", "--allow-net"];
+      const e2 = [
+        "--allow-read",
+        "--allow-run",
+        "--allow-write",
+        "--allow-net",
+      ];
       Rhum.asserts.assertEquals(a2, e2);
     });
   });
@@ -114,7 +122,8 @@ Rhum.testPlan("command_line_test.ts", () => {
         [
           "run",
           "hella",
-          "--option1", "hella",
+          "--option1",
+          "hella",
         ],
         [subcommand1Arg],
       );
@@ -128,9 +137,12 @@ Rhum.testPlan("command_line_test.ts", () => {
         [
           "run",
           "hella",
-          "--option1", "he",
-          "--option2", "ll",
-          "--option3", "a",
+          "--option1",
+          "he",
+          "--option2",
+          "ll",
+          "--option3",
+          "a",
         ],
         [subcommand1Arg],
       );
@@ -151,8 +163,9 @@ Rhum.testPlan("command_line_test.ts", () => {
       const commandLine = new CommandLine(
         [
           "run",
-          "--option1", "hellaOption",
-          "hellaArg"
+          "--option1",
+          "hellaOption",
+          "hellaArg",
         ],
         [subcommand1Arg],
       );

@@ -182,13 +182,13 @@ export class CommandLine {
    */
   protected matchArgumentsToNames(subcommands: Subcommand[]): void {
     subcommands.forEach((subcommand: Subcommand) => {
-        const sigSplit = subcommand.signature.split(" ");
-        sigSplit.shift(); // Take off the subcommand and leave only the args
+      const sigSplit = subcommand.signature.split(" ");
+      sigSplit.shift(); // Take off the subcommand and leave only the args
 
-        // Match arguments in the signature to arguments in the command line
-        for (let i = 0; i < sigSplit.length; i++) {
-          this.arguments[sigSplit[i]] = this.deno_args[i];
-        }
-      });
+      // Match arguments in the signature to arguments in the command line
+      for (let i = 0; i < sigSplit.length; i++) {
+        this.arguments[sigSplit[i]] = this.deno_args[i];
+      }
+    });
   }
 }

@@ -63,7 +63,7 @@ export class Line {
 
     this.command_line = new CommandLine(
       Deno.args.slice(),
-      this.subcommands
+      this.subcommands,
     );
   }
 
@@ -164,7 +164,7 @@ export class Line {
    * Take the subcommands array and instantiate all classes inside of it.
    */
   protected instantiateSubcommands(
-    subcommands: typeof Subcommand[]
+    subcommands: typeof Subcommand[],
   ): Subcommand[] {
     let ret: Subcommand[] = [];
 

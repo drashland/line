@@ -1,4 +1,4 @@
-import { Line, ILogger, SubcommandOption } from "../mod.ts";
+import { ILogger, Line, SubcommandOption } from "../mod.ts";
 
 /**
  * A class that represents a subcommand as an object.
@@ -138,7 +138,7 @@ export class Subcommand {
   /**
    * Show this subcommand's help menu.
    */
-  public showHelp(returnOutput = false): string|void {
+  public showHelp(returnOutput = false): string | void {
     let help = `USAGE\n\n`;
 
     help +=
@@ -147,10 +147,12 @@ export class Subcommand {
 
     if (this.options.length > 0) {
       help += "OPTIONS\n\n";
-      (this.options as SubcommandOption[]).forEach((option: SubcommandOption) => {
-        help += `    ${option.name}\n`;
-        help += `        ${option.description}\n`;
-      });
+      (this.options as SubcommandOption[]).forEach(
+        (option: SubcommandOption) => {
+          help += `    ${option.name}\n`;
+          help += `        ${option.description}\n`;
+        },
+      );
     }
 
     if (returnOutput) {

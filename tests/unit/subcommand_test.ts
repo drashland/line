@@ -57,7 +57,7 @@ Rhum.testPlan("subcommand_test.ts", () => {
   Rhum.testSuite("getArgumentValue()", () => {
     Rhum.testCase("can get arguments", () => {
       l.command_line = new CommandLine(
-        [ "run", "hella", "1", "2"],
+        ["run", "hella", "1", "2"],
         l.subcommands,
       );
 
@@ -88,7 +88,16 @@ Rhum.testPlan("subcommand_test.ts", () => {
   Rhum.testSuite("getDenoFlags()", () => {
     Rhum.testCase("can get options", () => {
       l.command_line = new CommandLine(
-        [ "run", "hella", "1", "2", "--allow-read", "--allow-run", "--allow-write", "--allow-net"],
+        [
+          "run",
+          "hella",
+          "1",
+          "2",
+          "--allow-read",
+          "--allow-run",
+          "--allow-write",
+          "--allow-net",
+        ],
         l.subcommands,
       );
 
@@ -107,7 +116,12 @@ Rhum.testPlan("subcommand_test.ts", () => {
         Rhum.asserts.assertEquals(actual, expected);
 
         const dfA = subcommand.getDenoFlags();
-        const dfE = [ "--allow-read", "--allow-run", "--allow-write", "--allow-net" ];
+        const dfE = [
+          "--allow-read",
+          "--allow-run",
+          "--allow-write",
+          "--allow-net",
+        ];
         Rhum.asserts.assertEquals(dfA, dfE);
       }
     });
@@ -116,7 +130,16 @@ Rhum.testPlan("subcommand_test.ts", () => {
   Rhum.testSuite("getOptionValue()", () => {
     Rhum.testCase("can get options", () => {
       l.command_line = new CommandLine(
-        [ "run", "hella", "1", "2", "--filter", "filterVal", "--verbose", "verboseVal"],
+        [
+          "run",
+          "hella",
+          "1",
+          "2",
+          "--filter",
+          "filterVal",
+          "--verbose",
+          "verboseVal",
+        ],
         l.subcommands,
       );
 
@@ -147,10 +170,10 @@ Rhum.testPlan("subcommand_test.ts", () => {
 
   Rhum.testSuite("handle()", () => {
     Rhum.testCase("handles properly", () => {
-      let subcommand: Subcommand|null;
+      let subcommand: Subcommand | null;
 
       l.command_line = new CommandLine(
-        [ "write", "hella", "1", "2", "--filter", "filterVal"],
+        ["write", "hella", "1", "2", "--filter", "filterVal"],
         l.subcommands,
       );
       subcommand = l.getSubcommand("write");
@@ -165,7 +188,7 @@ Rhum.testPlan("subcommand_test.ts", () => {
       }
 
       l.command_line = new CommandLine(
-        [ "write", "hella", "1", "2", "--verbose", "verboseVal"],
+        ["write", "hella", "1", "2", "--verbose", "verboseVal"],
         l.subcommands,
       );
       subcommand = l.getSubcommand("write");
@@ -180,7 +203,7 @@ Rhum.testPlan("subcommand_test.ts", () => {
       }
 
       l.command_line = new CommandLine(
-        [ "write", "hella", "1", "2",],
+        ["write", "hella", "1", "2"],
         l.subcommands,
       );
       subcommand = l.getSubcommand("write");
@@ -198,7 +221,7 @@ Rhum.testPlan("subcommand_test.ts", () => {
 
   Rhum.testSuite("showHelp()", () => {
     Rhum.testCase("help is created properly", () => {
-      let subcommand: Subcommand|null;
+      let subcommand: Subcommand | null;
 
       subcommand = l.getSubcommand("write");
       if (subcommand) {

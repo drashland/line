@@ -15,10 +15,7 @@
 1. Create your `app.ts` file.
 
 ```typescript
-import {
-  Line,
-  Subcommand,
-} from "https://deno.land/x/line/mod.ts";
+import { Line, Subcommand } from "https://deno.land/x/line/mod.ts";
 
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
