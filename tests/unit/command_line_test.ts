@@ -23,13 +23,13 @@ const subcommand1Arg = new Subcommand1Arg(l);
 const subcommand3Args = new Subcommand3Args(l);
 
 Rhum.testPlan("command_line_test.ts", () => {
-  Rhum.testSuite("getArgument()", () => {
+  Rhum.testSuite("getArgumentValue()", () => {
     Rhum.testCase("can get an argument", () => {
       const commandLine = new CommandLine(
         ["run", "hella"],
         [subcommand1Arg],
       );
-      const actual = commandLine.getArgument("[arg1]");
+      const actual = commandLine.getArgumentValue("arg1");
       const expected = "hella";
       Rhum.asserts.assertEquals(actual, expected);
     });
@@ -38,9 +38,9 @@ Rhum.testPlan("command_line_test.ts", () => {
         ["run", "he", "ll", "a"],
         [subcommand3Args],
       );
-      const a1 = commandLine.getArgument("[a]");
-      const a2 = commandLine.getArgument("[b]");
-      const a3 = commandLine.getArgument("[c]");
+      const a1 = commandLine.getArgumentValue("a");
+      const a2 = commandLine.getArgumentValue("b");
+      const a3 = commandLine.getArgumentValue("c");
       Rhum.asserts.assertEquals(a1, "he");
       Rhum.asserts.assertEquals(a2, "ll");
       Rhum.asserts.assertEquals(a3, "a");
@@ -66,7 +66,7 @@ Rhum.testPlan("command_line_test.ts", () => {
         ["run", "--allow-all", "hella"],
         [subcommand1Arg],
       );
-      const a1 = commandLine.getArgument("[arg1]");
+      const a1 = commandLine.getArgumentValue("arg1");
       const e1 = "hella";
       Rhum.asserts.assertEquals(a1, e1);
 
@@ -80,7 +80,7 @@ Rhum.testPlan("command_line_test.ts", () => {
         ["run", "hella", "--allow-all"],
         [subcommand1Arg],
       );
-      const a1 = commandLine.getArgument("[arg1]");
+      const a1 = commandLine.getArgumentValue("arg1");
       const e1 = "hella";
       Rhum.asserts.assertEquals(a1, e1);
 
@@ -98,7 +98,7 @@ Rhum.testPlan("command_line_test.ts", () => {
         ],
         [subcommand1Arg],
       );
-      const a1 = commandLine.getArgument("[arg1]");
+      const a1 = commandLine.getArgumentValue("arg1");
       const e1 = "hella";
       Rhum.asserts.assertEquals(a1, e1);
 
@@ -108,7 +108,7 @@ Rhum.testPlan("command_line_test.ts", () => {
     });
   });
 
-  Rhum.testSuite("getOption()", () => {
+  Rhum.testSuite("getOptionValue()", () => {
     Rhum.testCase("can get an option", () => {
       const commandLine = new CommandLine(
         [
@@ -118,7 +118,7 @@ Rhum.testPlan("command_line_test.ts", () => {
         ],
         [subcommand1Arg],
       );
-      const a1 = commandLine.getOption("--option1");
+      const a1 = commandLine.getOptionValue("--option1");
       const e1 = "hella";
       Rhum.asserts.assertEquals(a1, e1);
     });
@@ -134,15 +134,15 @@ Rhum.testPlan("command_line_test.ts", () => {
         ],
         [subcommand1Arg],
       );
-      const a1 = commandLine.getOption("--option1");
+      const a1 = commandLine.getOptionValue("--option1");
       const e1 = "he";
       Rhum.asserts.assertEquals(a1, e1);
 
-      const a2 = commandLine.getOption("--option2");
+      const a2 = commandLine.getOptionValue("--option2");
       const e2 = "ll";
       Rhum.asserts.assertEquals(a2, e2);
 
-      const a3 = commandLine.getOption("--option3");
+      const a3 = commandLine.getOptionValue("--option3");
       const e3 = "a";
       Rhum.asserts.assertEquals(a3, e3);
     });
@@ -156,11 +156,11 @@ Rhum.testPlan("command_line_test.ts", () => {
         ],
         [subcommand1Arg],
       );
-      const a1 = commandLine.getOption("--option1");
+      const a1 = commandLine.getOptionValue("--option1");
       const e1 = "hellaOption";
       Rhum.asserts.assertEquals(a1, e1);
 
-      const a2 = commandLine.getArgument("[arg1]");
+      const a2 = commandLine.getArgumentValue("arg1");
       const e2 = "hellaArg";
       Rhum.asserts.assertEquals(a2, e2);
     });

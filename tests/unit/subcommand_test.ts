@@ -14,16 +14,16 @@ class Subcommand2 extends Subcommand {
     Option2,
   ];
   public handle(): void {
-    if (this.getOption("--filter")) {
+    if (this.getOptionValue("--filter")) {
       throw new Error("filter");
     }
-    if (this.getOption("--verbose")) {
+    if (this.getOptionValue("--verbose")) {
       throw new Error("verbose");
     }
 
-    const a = this.getArgument("[a]");
-    const b = this.getArgument("[b]");
-    const c = this.getArgument("[c]");
+    const a = this.getArgumentValue("a");
+    const b = this.getArgumentValue("b");
+    const c = this.getArgumentValue("c");
     throw new Error(`${a} ${b} ${c}`);
   }
 }
@@ -54,7 +54,7 @@ l.subcommands.forEach((subcommand: Subcommand) => {
 });
 
 Rhum.testPlan("subcommand_test.ts", () => {
-  Rhum.testSuite("getArgument()", () => {
+  Rhum.testSuite("getArgumentValue()", () => {
     Rhum.testCase("can get arguments", () => {
       l.command_line = new CommandLine(
         [ "run", "hella", "1", "2"],
@@ -63,22 +63,22 @@ Rhum.testPlan("subcommand_test.ts", () => {
 
       let subcommand = l.getSubcommand("read");
       if (subcommand) {
-        const actual = subcommand.getArgument("[arg1]");
+        const actual = subcommand.getArgumentValue("arg1");
         const expected = "hella";
         Rhum.asserts.assertEquals(actual, expected);
       }
 
       subcommand = l.getSubcommand("write");
       if (subcommand) {
-        let actual = subcommand.getArgument("[a]");
+        let actual = subcommand.getArgumentValue("a");
         let expected = "hella";
         Rhum.asserts.assertEquals(actual, expected);
 
-        actual = subcommand.getArgument("[b]");
+        actual = subcommand.getArgumentValue("b");
         expected = "1";
         Rhum.asserts.assertEquals(actual, expected);
 
-        actual = subcommand.getArgument("[c]");
+        actual = subcommand.getArgumentValue("c");
         expected = "2";
         Rhum.asserts.assertEquals(actual, expected);
       }
@@ -94,15 +94,15 @@ Rhum.testPlan("subcommand_test.ts", () => {
 
       const subcommand = l.getSubcommand("write");
       if (subcommand) {
-        let actual = subcommand.getArgument("[a]");
+        let actual = subcommand.getArgumentValue("a");
         let expected = "hella";
         Rhum.asserts.assertEquals(actual, expected);
 
-        actual = subcommand.getArgument("[b]");
+        actual = subcommand.getArgumentValue("b");
         expected = "1";
         Rhum.asserts.assertEquals(actual, expected);
 
-        actual = subcommand.getArgument("[c]");
+        actual = subcommand.getArgumentValue("c");
         expected = "2";
         Rhum.asserts.assertEquals(actual, expected);
 
@@ -113,7 +113,7 @@ Rhum.testPlan("subcommand_test.ts", () => {
     });
   });
 
-  Rhum.testSuite("getOption()", () => {
+  Rhum.testSuite("getOptionValue()", () => {
     Rhum.testCase("can get options", () => {
       l.command_line = new CommandLine(
         [ "run", "hella", "1", "2", "--filter", "filterVal", "--verbose", "verboseVal"],
@@ -122,23 +122,23 @@ Rhum.testPlan("subcommand_test.ts", () => {
 
       const subcommand = l.getSubcommand("write");
       if (subcommand) {
-        let actual = subcommand.getArgument("[a]");
+        let actual = subcommand.getArgumentValue("a");
         let expected = "hella";
         Rhum.asserts.assertEquals(actual, expected);
 
-        actual = subcommand.getArgument("[b]");
+        actual = subcommand.getArgumentValue("b");
         expected = "1";
         Rhum.asserts.assertEquals(actual, expected);
 
-        actual = subcommand.getArgument("[c]");
+        actual = subcommand.getArgumentValue("c");
         expected = "2";
         Rhum.asserts.assertEquals(actual, expected);
 
-        actual = subcommand.getOption("--filter");
+        actual = subcommand.getOptionValue("--filter");
         expected = "filterVal";
         Rhum.asserts.assertEquals(actual, expected);
 
-        actual = subcommand.getOption("--verbose");
+        actual = subcommand.getOptionValue("--verbose");
         expected = "verboseVal";
         Rhum.asserts.assertEquals(actual, expected);
       }

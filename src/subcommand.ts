@@ -67,14 +67,14 @@ export class Subcommand {
   }
 
   /**
-   * Get an argument from the command line.
+   * Get an argument value from the command line.
    *
-   * @param argumentName - The name of the argument to get.
+   * @param argumentName - The name of the argument containing the value.
    *
    * @returns The value of the argument or null if no value.
    */
-  public getArgument(argumentName: string): string | null {
-    return this.cli.command_line.getArgument(argumentName);
+  public getArgumentValue(argumentName: string): string | null {
+    return this.cli.command_line.getArgumentValue(argumentName);
   }
 
   /**
@@ -87,13 +87,13 @@ export class Subcommand {
   }
 
   /**
-   * Get an option from the command line.
+   * Get an option value from the command line.
    *
    * @param optionName - The name of the option to get.
    *
    * @returns The value of the option or null if no value.
    */
-  public getOption(optionName: string): string | null {
+  public getOptionValue(optionName: string): string | null {
     const results = (this.options as SubcommandOption[])
       .filter((option: SubcommandOption) => {
         return option.name == optionName;
@@ -108,7 +108,7 @@ export class Subcommand {
       Deno.exit(1);
     }
 
-    return this.cli.command_line.getOption(optionName);
+    return this.cli.command_line.getOptionValue(optionName);
   }
 
   /**

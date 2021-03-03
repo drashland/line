@@ -28,7 +28,7 @@ class Read extends Subcommand {
   public description = "Read a file.";
 
   public handle(): void { // can also be async
-    const file = this.getArgument("[file]");
+    const file = this.getArgumentValue("file");
     if (!file) {
       return console.log("File not specified");
     }
@@ -42,11 +42,11 @@ class Write extends Subcommand {
   public description = "Write contents to a file.";
 
   public handle(): void { // can also be async
-    const file = this.getArgument("[file]");
+    const file = this.getArgumentValue("file");
     if (!file) {
       return console.log("File not specified");
     }
-    const contents = this.getArgument("[contents]");
+    const contents = this.getArgumentValue("contents");
     if (!contents) {
       return console.log("Contents not specified");
     }

@@ -73,7 +73,7 @@ export class CommandLine {
   //////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Get an argument from Deno.args.
+   * Get an argument value from Deno.args.
    *
    * @param argumentName - The name of the argument to get. The name of the
    * argument should match the argument's signature in a subcommand's signature
@@ -82,8 +82,8 @@ export class CommandLine {
    *
    * @returns The argument's value or null if it has no value.
    */
-  public getArgument(argumentName: string): null | string {
-    return this.arguments[argumentName] ?? null;
+  public getArgumentValue(argumentName: string): null | string {
+    return this.arguments["[" + argumentName + "]"] ?? null;
   }
 
   /**
@@ -96,13 +96,13 @@ export class CommandLine {
   }
 
   /**
-   * Get an option from Deno.args.
+   * Get an option value from Deno.args.
    *
    * @param optionName - The name of the option to get.
    *
    * @returns The option's value or null if it has no value.
    */
-  public getOption(optionName: string): null | string {
+  public getOptionValue(optionName: string): null | string {
     return this.options[optionName] ?? null;
   }
 
