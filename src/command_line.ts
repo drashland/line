@@ -114,27 +114,19 @@ export class CommandLine {
    * Extract all Deno flags from the arguments.
    */
   protected extractDenoFlagsFromArguments(): void {
+    const denoFlags = [
+      "--allow-all",
+      "--allow-net",
+      "--allow-read",
+      "--allow-run",
+      "--allow-write",
+      "--reload",
+      "-A",
+    ];
+
     this.deno_args.forEach((datum: string) => {
-      if (datum.includes("-A")) {
-        this.deno_flags.push("-A");
-      }
-      if (datum == "--allow-all") {
-        this.deno_flags.push("--allow-all");
-      }
-      if (datum == "--allow-net") {
-        this.deno_flags.push("--allow-net");
-      }
-      if (datum == "--allow-read") {
-        this.deno_flags.push("--allow-read");
-      }
-      if (datum == "--allow-run") {
-        this.deno_flags.push("--allow-run");
-      }
-      if (datum == "--allow-write") {
-        this.deno_flags.push("--allow-write");
-      }
-      if (datum.includes("--reload")) {
-        this.deno_flags.push("--reload");
+      if (denoFlags.indexOf(datum) != -1) {
+        this.deno_flags.push(datum);
       }
     });
 
