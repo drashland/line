@@ -22,7 +22,7 @@ jobs:
         uses: denolib/setup-deno@master
 
       - name: Unit
-        run: deno test tests/unit/tests. --allow-net --allow-write --allow-read
+        run: deno test --allow-env tests/unit
 
 
   linter:
