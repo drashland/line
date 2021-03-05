@@ -25,17 +25,25 @@ const subcommand3Args = new Subcommand3Args(l);
 Rhum.testPlan("command_line_test.ts", () => {
   Rhum.testSuite("constructor()", () => {
     Rhum.testCase("Sets the sucommand property", () => {
-      const C = new CommandLine(["hiya:)"], [])
-      Rhum.asserts.assertEquals(C.subcommand, "hiya:)")
-    })
+      const C = new CommandLine(["hiya:)"], []);
+      Rhum.asserts.assertEquals(C.subcommand, "hiya:)");
+    });
     Rhum.testCase("Extracts the options", () => {
-      const C = new CommandLine(["hiya:)", "--givemoney", "true", "--amount", "10000000", "--currency", "GBP"], [])
+      const C = new CommandLine([
+        "hiya:)",
+        "--givemoney",
+        "true",
+        "--amount",
+        "10000000",
+        "--currency",
+        "GBP",
+      ], []);
       Rhum.asserts.assertEquals(C.options, {
         "--amount": "10000000",
         "--currency": "GBP",
-        "--givemoney": "true"
-      })
-    })
+        "--givemoney": "true",
+      });
+    });
     Rhum.testCase("ignores arguments not in subcommand signature", () => {
       const commandLine = new CommandLine(
         ["run", "he", "ll", "a", "ignored"],
@@ -64,10 +72,10 @@ Rhum.testPlan("command_line_test.ts", () => {
       Rhum.asserts.assertEquals(C.arguments, {
         "[a]": "marco",
         "[b]": "polo",
-        "[c]": "ahyoufoundme"
-      })
-    })
-  })
+        "[c]": "ahyoufoundme",
+      });
+    });
+  });
   Rhum.testSuite("getArgumentValue()", () => {
     Rhum.testCase("can get an argument", () => {
       const commandLine = new CommandLine(
