@@ -1,4 +1,4 @@
-import { Rhum } from "../../deps.ts";
+import { Rhum } from "../deps.ts";
 import { CommandLine, Line, Subcommand } from "../../mod.ts";
 
 class Subcommand1Arg extends Subcommand {
