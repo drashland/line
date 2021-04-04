@@ -78,7 +78,7 @@ $ deno install --allow-read --allow-write --name fm app.ts
 
 3. Run your app.
 
-```shell
+```
 $ fm
 
 File Manager - A file manager.
