@@ -27,6 +27,9 @@ jobs:
       - name: Integration
         run: deno test -A tests/integration
 
+      - name: Tutorials
+        run: deno test -A tests/tutorials
+
       - name: Can create a CLI
         run: |
           deno install --allow-read --allow-write --name fm tests/integration/usage_as_a_file_manager_data.ts
