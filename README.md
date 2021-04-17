@@ -37,7 +37,8 @@ To build a simple CLI, follow the quick start guide
 [here](https://drash.land/line/#/#quickstart).
 
 Alternatively, you can navigate through the
-[full documentation](https://drash.land/line) and check out the tutorials on creating a CLI.
+[full documentation](https://drash.land/line) and check out the tutorials on
+creating a CLI.
 
 ---
 
