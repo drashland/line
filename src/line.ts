@@ -90,7 +90,7 @@ export class Line {
     if (cb) {
       cb();
     }
-    Deno.exit(1);
+    Deno.exit(code);
   }
 
   /**

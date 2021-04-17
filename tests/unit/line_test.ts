@@ -40,16 +40,16 @@ class Write extends Subcommand {
   }
 }
 
-const service = new Line({
-  command: "fm",
-  name: "File Manager",
-  description: "A file manager.",
-  version: "v1.0.0",
-  subcommands: [
-    Read,
-    Write,
-  ],
-});
+// const service = new Line({
+//   command: "fm",
+//   name: "File Manager",
+//   description: "A file manager.",
+//   version: "v1.0.0",
+//   subcommands: [
+//     Read,
+//     Write,
+//   ],
+// });
 
 Rhum.testPlan("tests/unit/subcommand_option_test.ts", () => {
   Rhum.testSuite("constructor()", () => {
