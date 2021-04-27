@@ -1,0 +1,53 @@
+name: Master
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Deno
+        uses: denolib/setup-deno@master
+
+      - name: Unit
+        run: deno test --allow-env tests/unit
+
+      - name: Integration
+        run: deno test -A tests/integration
+
+      - name: Tutorials
+        run: deno test -A tests/tutorials
+
+      - name: Can create a CLI
+        run: |
+          deno install --allow-read --allow-write --name fm tests/integration/usage_as_a_file_manager_data.ts
+          fm --help
+
+  linter:
+    # Only one OS is required since fmt is cross platform
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Deno
+        uses: denolib/setup-deno@master
+
+      - name: Formatter
+        run: deno fmt --check
+
+      - name: Linter
+        run: deno lint --unstable
+

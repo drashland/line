@@ -90,7 +90,7 @@ export class Line {
     if (cb) {
       cb();
     }
-    Deno.exit(1);
+    Deno.exit(code);
   }
 
   /**
@@ -166,7 +166,7 @@ export class Line {
   protected instantiateSubcommands(
     subcommands: typeof Subcommand[],
   ): Subcommand[] {
-    let ret: Subcommand[] = [];
+    const ret: Subcommand[] = [];
 
     subcommands.filter((subcommand: typeof Subcommand) => {
       const s = new subcommand(this);
