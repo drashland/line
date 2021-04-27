@@ -3,99 +3,42 @@
   <h1 align="center">Line</h1>
 </p>
 <p align="center">A command-line interface (CLI) framework.</p>
+<p align="center">
+  <a href="https://github.com/drashland/line/releases">
+    <img src="https://img.shields.io/github/release/drashland/line.svg?color=bright_green&label=latest">
+  </a>
+  <a href="https://github.com/drashland/line/actions">
+    <img src="https://img.shields.io/github/workflow/status/drashland/line/master?label=ci">
+  </a>
+  <a href="https://discord.gg/SgejNXq">
+    <img src="https://img.shields.io/badge/chat-on%20discord-blue">
+  </a>
+  <a href="https://twitter.com/drash_land">
+    <img src="https://img.shields.io/twitter/url?label=%40drash_land&style=social&url=https%3A%2F%2Ftwitter.com%2Fdrash_land">
+  </a>
+</p>
 
 ---
 
-## Table of Contents
+### Features
 
-- [Quickstart](#quickstart)
+- Zero 3rd Party Dependencies
+- Extensively Documented
+- Tutorials
+- Lightweight
+- Handles subcommands and options
 
-## Quickstart
+### Getting Started
 
-1. Create your `app.ts` file.
+To build a simple CLI, follow the quick start guide
+[here](https://drash.land/line/#/#quickstart).
 
-```typescript
-import { Line, Subcommand } from "https://deno.land/x/line/mod.ts";
+Alternatively, you can navigate through the
+[full documentation](https://drash.land/line) and check out the tutorials on
+creating a CLI.
 
-const decoder = new TextDecoder();
-const encoder = new TextEncoder();
+---
 
-class Read extends Subcommand {
-  public signature = "read [file]";
-  public description = "Read a file.";
-
-  public handle(): void { // can also be async
-    const file = this.getArgumentValue("file");
-    if (!file) {
-      return console.log("File not specified");
-    }
-    const contents = Deno.readFileSync(file);
-    console.log(decoder.decode(contents));
-  }
-}
-
-class Write extends Subcommand {
-  public signature = "write [file] [contents]";
-  public description = "Write contents to a file.";
-
-  public handle(): void { // can also be async
-    const file = this.getArgumentValue("file");
-    if (!file) {
-      return console.log("File not specified");
-    }
-    const contents = this.getArgumentValue("contents");
-    if (!contents) {
-      return console.log("Contents not specified");
-    }
-    try {
-      Deno.writeFileSync(file, encoder.encode(contents));
-      console.log("Successfully wrote file.");
-    } catch (error) {
-      console.log(error);
-    }
-  }
-}
-
-const service = new Line({
-  command: "fm",
-  name: "File Manager",
-  description: "A file manager.",
-  version: "v1.0.0",
-  subcommands: [
-    Read,
-    Write,
-  ],
-});
-
-service.run();
-```
-
-2. Install your `app.ts` file as a binary under the name `fm`.
-
-```shell
-$ deno install --allow-read --allow-write --name fm app.ts
-```
-
-3. Run your app.
-
-```shell
-$ fm
-
-File Manager - A file manager.
-
-USAGE
-
-    fm [option | [[subcommand] [args] [deno flags] [options]]
-
-OPTIONS
-
-    -h, --help    Show this menu.
-    -v, --version Show this CLI's version.
-
-SUBCOMMANDS
-
-    read
-        Read a file.
-    write
-        Write contents to a file.
-```
+Want to contribute? Follow the Contributing Guidelines
+[here](https://github.com/drashland/.github/blob/master/CONTRIBUTING.md). All
+code is released under the [MIT License](./LICENSE).

@@ -12,12 +12,12 @@ export class SubcommandOption {
   /**
    * This option's name. For example, "--my-cool-option".
    */
-  public name: string = "";
+  public name = "";
 
   /**
    * This option's description.
    */
-  public description: string = "";
+  public description = "";
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////

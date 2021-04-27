@@ -1,4 +1,4 @@
-import { Rhum } from "../../deps.ts";
+import { Rhum } from "../deps.ts";
 import { CommandLine, Line, Subcommand } from "../../mod.ts";
 
 class Subcommand1Arg extends Subcommand {
@@ -23,6 +23,59 @@ const subcommand1Arg = new Subcommand1Arg(l);
 const subcommand3Args = new Subcommand3Args(l);
 
 Rhum.testPlan("command_line_test.ts", () => {
+  Rhum.testSuite("constructor()", () => {
+    Rhum.testCase("Sets the sucommand property", () => {
+      const C = new CommandLine(["hiya:)"], []);
+      Rhum.asserts.assertEquals(C.subcommand, "hiya:)");
+    });
+    Rhum.testCase("Extracts the options", () => {
+      const C = new CommandLine([
+        "hiya:)",
+        "--givemoney",
+        "true",
+        "--amount",
+        "10000000",
+        "--currency",
+        "GBP",
+      ], []);
+      Rhum.asserts.assertEquals(C.options, {
+        "--amount": "10000000",
+        "--currency": "GBP",
+        "--givemoney": "true",
+      });
+    });
+    Rhum.testCase("ignores arguments not in subcommand signature", () => {
+      const commandLine = new CommandLine(
+        ["run", "he", "ll", "a", "ignored"],
+        [subcommand3Args],
+      );
+      const actual = commandLine.arguments;
+      const expected = {
+        "[a]": "he",
+        "[b]": "ll",
+        "[c]": "a",
+      };
+      Rhum.asserts.assertEquals(actual, expected);
+    });
+    Rhum.testCase("Sets the arguments", () => {
+      // const L = new Line({
+      //   name: "hiya:)",
+      //   description: "Say hi :)",
+      //   subcommands: [S],
+      //   command: "hey_gurl",
+      //   version: "v4.2.0" // lol
+      // })
+      const C = new CommandLine(
+        ["hey:)", "marco", "polo", "ahyoufoundme"],
+        [subcommand3Args],
+      );
+      Rhum.asserts.assertEquals(C.arguments, {
+        "[a]": "marco",
+        "[b]": "polo",
+        "[c]": "ahyoufoundme",
+      });
+    });
+  });
   Rhum.testSuite("getArgumentValue()", () => {
     Rhum.testCase("can get an argument", () => {
       const commandLine = new CommandLine(
@@ -44,19 +97,6 @@ Rhum.testPlan("command_line_test.ts", () => {
       Rhum.asserts.assertEquals(a1, "he");
       Rhum.asserts.assertEquals(a2, "ll");
       Rhum.asserts.assertEquals(a3, "a");
-    });
-    Rhum.testCase("ignores arguments not in subcommand signature", () => {
-      const commandLine = new CommandLine(
-        ["run", "he", "ll", "a", "ignored"],
-        [subcommand3Args],
-      );
-      const actual = commandLine.arguments;
-      const expected = {
-        "[a]": "he",
-        "[b]": "ll",
-        "[c]": "a",
-      };
-      Rhum.asserts.assertEquals(actual, expected);
     });
   });
 

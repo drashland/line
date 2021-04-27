@@ -12,12 +12,12 @@ export class Subcommand {
   /**
    * This subcommand's description.
    */
-  public description: string = "";
+  public description = "";
 
   /**
    * This subcommand's name.
    */
-  public name: string = "";
+  public name = "";
 
   /**
    * This subcommand's options.
@@ -27,7 +27,7 @@ export class Subcommand {
   /**
    * This subcommand's signature. For example, "run [arg1] [arg2]".
    */
-  public signature: string = "";
+  public signature = "";
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
@@ -124,7 +124,7 @@ export class Subcommand {
    * them.
    */
   public instantiateOptions(): void {
-    let options: SubcommandOption[] = [];
+    const options: SubcommandOption[] = [];
 
     (this.options as unknown as (typeof SubcommandOption)[])
       .filter((option: typeof SubcommandOption) => {

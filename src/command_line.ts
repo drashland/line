@@ -1,4 +1,4 @@
-import { Line, Subcommand } from "../mod.ts";
+import { Subcommand } from "../mod.ts";
 
 /**
  * The command line is the entire line entered by the user. For example, if the
