@@ -185,7 +185,7 @@ export class Line {
 
     help += `USAGE\n\n`;
     help +=
-      `    ${this.command} [option | [[subcommand] [args] [deno flags] [options]] ]\n`;
+      `    ${this.command} [option | [[subcommand] [args] [deno flags] [options]]]\n`;
     help += `\n`;
 
     help += `OPTIONS\n\n`;
