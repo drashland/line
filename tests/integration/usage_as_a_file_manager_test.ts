@@ -3,7 +3,7 @@ import { Rhum } from "../deps.ts";
 const decoder = new TextDecoder();
 
 const help =
-  `File Manager - A file manager.\n\nUSAGE\n\n    fm [option | [[subcommand] [args] [deno flags] [options]]\n\nOPTIONS\n\n    -h, --help    Show this menu.\n    -v, --version Show this CLI's version.\n\nSUBCOMMANDS\n\n    read\n        Read a file.\n    write\n        Write contents to a file.\n\n`;
+  `File Manager - A file manager.\n\nUSAGE\n\n    fm [option | [[subcommand] [args] [deno flags] [options]]]\n\nOPTIONS\n\n    -h, --help    Show this menu.\n    -v, --version Show this CLI's version.\n\nSUBCOMMANDS\n\n    read\n        Read a file.\n    write\n        Write contents to a file.\n\n`;
 
 Rhum.testPlan("tests/integration/usage_as_a_file_manager_test.ts", () => {
   Rhum.testSuite("No arguments", () => {
