@@ -8,7 +8,7 @@ const helpOutput =
 
 USAGE
 
-    fm [option | [[subcommand] [args] [deno flags] [options]]
+    fm [option | [[subcommand] [args] [deno flags] [options]]]
 
 OPTIONS
 
