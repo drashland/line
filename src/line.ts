@@ -65,17 +65,17 @@ export class Line {
     this.command = configs.command;
     this.name = configs.name;
     if (!configs.maincommand && !configs.subcommands) {
-      throw new Error("one of em must be defined ya dingus")
+      throw new Error("one of em must be defined ya dingus");
     }
     if (configs.maincommand && configs.subcommands) {
-      throw new Error("only define one ya pleb")
+      throw new Error("only define one ya pleb");
     }
     this.description = configs.description, this.version = configs.version;
     if (configs.subcommands) {
-    this.subcommands = this.instantiateSubcommands(configs.subcommands);
+      this.subcommands = this.instantiateSubcommands(configs.subcommands);
     }
     if (configs.maincommand) {
-      this.maincommand = new configs.maincommand(this)
+      this.maincommand = new configs.maincommand(this);
     }
 
     this.command_line = new CommandLine(
@@ -135,12 +135,11 @@ export class Line {
     }
 
     if (this.maincommand) {
-      this.tryHandleForMainCommand()
+      this.tryHandleForMainCommand();
     }
     if (this.subcommands) {
-      this.tryHandleForSubcommand()
+      this.tryHandleForSubcommand();
     }
-  
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -172,26 +171,24 @@ export class Line {
 
     help += `USAGE\n\n`;
     if (this.maincommand) {
-      help +=
-      `    ${this.command} ${this.maincommand.signature}`;
-    help += `\n`;
-
+      help += `    ${this.command} ${this.maincommand.signature}`;
+      help += `\n`;
     }
     if (this.subcommands) {
-    help +=
-      `    ${this.command} [option | [[subcommand] [args] [deno flags] [options]]]\n`;
-    help += `\n`;
+      help +=
+        `    ${this.command} [option | [[subcommand] [args] [deno flags] [options]]]\n`;
+      help += `\n`;
 
-    help += `OPTIONS\n\n`;
-    help += `    -h, --help    Show this menu.\n`;
-    help += `    -v, --version Show this CLI's version.\n`;
-    help += `\n`;
+      help += `OPTIONS\n\n`;
+      help += `    -h, --help    Show this menu.\n`;
+      help += `    -v, --version Show this CLI's version.\n`;
+      help += `\n`;
       help += `SUBCOMMANDS\n\n`;
       (this.subcommands as Subcommand[]).forEach((subcommand: Subcommand) => {
         help += `    ${subcommand.name}\n`;
         help += `        ${subcommand.description}\n`;
       });
-  }
+    }
 
     console.log(help);
   }
@@ -238,12 +235,11 @@ export class Line {
       );
     }
 
-      // It's a subcommand, so make all of its options and run its handle method
-    input.instantiateOptions();
+    // It's a subcommand, so make all of its options and run its handle method
     input.handle();
   }
 
   private tryHandleForMainCommand() {
-    this.maincommand.handle()
+    this.maincommand!.handle();
   }
 }

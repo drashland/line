@@ -1,4 +1,4 @@
-import { Subcommand, Maincommand } from "../mod.ts";
+import { Maincommand, Subcommand } from "../mod.ts";
 
 /**
  * The signature of the logger's methods.
@@ -15,7 +15,7 @@ export type TLogMethod = (message: string) => void;
  * command - The CLI's main command. This is the command used to run th CLI.
  *
  * subcommands - An array of Subcommand classes.
- * 
+ *
  * maincommand - Class to handle usage of the CLI is its a single command CLI
  *
  * version - This CLI's version.
@@ -26,8 +26,8 @@ export type ILineConfigs = {
   command: string;
   version: string;
   subcommands?: typeof Subcommand[];
-  maincommand?: typeof Maincommand
-}
+  maincommand?: typeof Maincommand;
+};
 
 /**
  * This CLI's logger.
