@@ -1,4 +1,5 @@
 import { Subcommand } from "../mod.ts";
+import { Maincommand } from "./main_command.ts";
 
 /**
  * The command line is the entire line entered by the user. For example, if the
@@ -18,7 +19,7 @@ export class CommandLine {
    * as "run [directory|file]", then the command "rhum run tests" will become
    * { "[directory|file]": "tests" } in this property.
    */
-  public arguments: { [key: string]: string | undefined } = {};
+  public arguments: { [key: string]: string | undefined | string[] } = {};
 
   /**
    * Storage to hold all options and their values in the command line. For
@@ -44,6 +45,8 @@ export class CommandLine {
    */
   protected deno_flags: string[] = [];
 
+  protected deno_args_for_main_command: string[];
+
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
@@ -55,7 +58,15 @@ export class CommandLine {
    * @param subcommands - Used to match subcommand arguments to arguments in the
    * command line.
    */
-  constructor(denoArgs: string[], subcommands: Subcommand[]) {
+  constructor(
+    denoArgs: string[],
+    subcommands: Subcommand[],
+    mainCommandHandler: Maincommand | null,
+  ) {
+    this.deno_args_for_main_command = denoArgs;
+    denoArgs = denoArgs.filter((_arg, i) => {
+      return i !== 0;
+    });
     this.deno_args = denoArgs;
 
     // The second argument is always the subcommand
@@ -66,6 +77,10 @@ export class CommandLine {
     this.extractOptionsFromArguments();
 
     this.matchArgumentsToNames(subcommands);
+
+    if (mainCommandHandler) {
+      this.matchArgumentsToNamesForMaincommand(mainCommandHandler);
+    }
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -82,7 +97,7 @@ export class CommandLine {
    *
    * @returns The argument's value or null if it has no value.
    */
-  public getArgumentValue(argumentName: string): null | string {
+  public getArgumentValue(argumentName: string): null | string | string[] {
     return this.arguments["[" + argumentName + "]"] ?? null;
   }
 
@@ -185,5 +200,19 @@ export class CommandLine {
         this.arguments[sigSplit[i]] = this.deno_args[i];
       }
     });
+  }
+
+  protected matchArgumentsToNamesForMaincommand(mainCommand: Maincommand) {
+    const sigSplit = mainCommand.signature.split(" ");
+    // Match arguments in the signature to arguments in the command line
+    for (let i = 0; i < sigSplit.length; i++) {
+      if (sigSplit[i].includes("...")) {
+        // if a sig field is ..., then what we need to do is get every OTHER arg we haven't get got and assing it as an array
+        const others = this.deno_args_for_main_command.slice(i);
+        this.arguments[sigSplit[i]] = others;
+      } else {
+        this.arguments[sigSplit[i]] = this.deno_args_for_main_command[i];
+      }
+    }
   }
 }

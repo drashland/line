@@ -3,7 +3,7 @@ import { ILogger, Line, SubcommandOption } from "../mod.ts";
 /**
  * A class that represents a subcommand as an object.
  */
-export class Subcommand {
+export class Maincommand {
   /**
    * The CLI processing this subcommand.
    */

@@ -1,4 +1,5 @@
 import { Subcommand } from "../mod.ts";
+import { Maincommand } from "./main_command.ts";
 
 /**
  * The signature of the logger's methods.
@@ -22,7 +23,8 @@ export interface ILineConfigs {
   name: string;
   description: string;
   command: string;
-  subcommands: typeof Subcommand[];
+  subcommands?: typeof Subcommand[];
+  main_command_handler?: typeof Maincommand | null;
   version: string;
 }
 

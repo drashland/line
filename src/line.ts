@@ -1,6 +1,7 @@
 import { ConsoleLogger } from "../deps.ts";
 
 import { CommandLine, ILineConfigs, ILogger, Subcommand } from "../mod.ts";
+import { Maincommand } from "./main_command.ts";
 
 /**
  * A class to help build CLIs.
@@ -39,7 +40,9 @@ export class Line {
   /**
    * This CLI's subcommands.
    */
-  public subcommands: Subcommand[];
+  public subcommands: Subcommand[] = [];
+
+  public main_command_handler: Maincommand | null = null;
 
   /**
    * This CLI's version.
@@ -59,11 +62,17 @@ export class Line {
     this.command = configs.command;
     this.name = configs.name;
     this.description = configs.description, this.version = configs.version;
-    this.subcommands = this.instantiateSubcommands(configs.subcommands);
-
+    if (configs.subcommands) {
+      this.subcommands = this.instantiateSubcommands(configs.subcommands);
+    }
+    if (configs.main_command_handler) {
+      this.main_command_handler = new configs.main_command_handler(this);
+    }
+    const args = Deno.args;
     this.command_line = new CommandLine(
-      Deno.args.slice(),
+      args,
       this.subcommands,
+      this.main_command_handler,
     );
   }
 
@@ -113,47 +122,57 @@ export class Line {
    * Run this CLI.
    */
   public run(): void {
-    if (!this.command_line.subcommand) {
+    if (!this.command_line.subcommand && !this.main_command_handler) {
       return this.showHelp();
     }
 
     const input = this.getSubcommand(this.command_line.subcommand);
 
-    // Not a subcommand? Maybe it's a command option.
-    if (!input) {
-      switch (Deno.args[0]) {
-        case "-h":
-        case "--help":
-          return this.showHelp();
-        case "-v":
-        case "--version":
-          return this.showVersion();
-      }
-
-      return this.exit(
-        1,
-        "error",
-        `Unknown input "${this.command_line.subcommand}" specified.`,
-        () => {
-          let availOptions = `AVAILABLE OPTIONS\n\n`;
-          availOptions += `    -h, --help\n`;
-          availOptions += `    -v, --version\n`;
-          console.log(availOptions);
-
-          let availSubcommands = `AVAILABLE SUBCOMMANDS\n\n`;
-          this.subcommands.forEach(
-            (subcommand: Subcommand) => {
-              availSubcommands += `    ${subcommand.name}\n`;
-            },
-          );
-          console.log(availSubcommands);
-        },
-      );
+    // It's a subcommand, so make all of its options and run its handle method
+    if (input) {
+      input.instantiateOptions();
+      input.handle();
+      return;
     }
 
-    // It's a subcommand, so make all of its options and run its handle method
-    input.instantiateOptions();
-    input.handle();
+    // Not a subcommand? Maybe it's a command option.
+    switch (Deno.args[0]) {
+      case "-h":
+      case "--help":
+        return this.showHelp();
+      case "-v":
+      case "--version":
+        return this.showVersion();
+      default:
+        break;
+    }
+
+    // Not an option? Maybe its the maincommand
+    if (this.main_command_handler) {
+      this.main_command_handler.handle();
+      return;
+    }
+
+    // Not a command either!? Oo, well guess we'll have to tell the user whatever they typed isn't correct
+    return this.exit(
+      1,
+      "error",
+      `Unknown input "${this.command_line.subcommand}" specified.`,
+      () => {
+        let availOptions = `AVAILABLE OPTIONS\n\n`;
+        availOptions += `    -h, --help\n`;
+        availOptions += `    -v, --version\n`;
+        console.log(availOptions);
+
+        let availSubcommands = `AVAILABLE SUBCOMMANDS\n\n`;
+        this.subcommands.forEach(
+          (subcommand: Subcommand) => {
+            availSubcommands += `    ${subcommand.name}\n`;
+          },
+        );
+        console.log(availSubcommands);
+      },
+    );
   }
 
   //////////////////////////////////////////////////////////////////////////////
