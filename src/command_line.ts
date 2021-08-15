@@ -13,10 +13,9 @@ export class CommandLine {
    * this command line. It is the value of the "--ftc" option.
    *
    * Furthermore, each argument is associated with a name. The name comes from a
-   * subcommand's signature property. For example, if "rhum" is the main command
-   * and there is a subcommand in this CLI that defines its signature property
-   * as "run [directory|file]", then the command "rhum run tests" will become
-   * { "[directory|file]": "tests" } in this property.
+   * command's signature property. For example, if "read" is the command and its
+   * signature property is "read [directory|file]", then the command "read this"
+   * will become { "directory|file": "this" } in this property.
    */
   public arguments: { [key: string]: string | undefined } = {};
 
@@ -33,10 +32,8 @@ export class CommandLine {
   public deno_args: string[];
 
   /**
-   * See https://deno.land/manual/getting_started/permissions#permissions-list.
+   * See Line.Cli.
    */
-  protected deno_flags: string[] = [];
-
   protected cli: Line.Cli;
 
   //////////////////////////////////////////////////////////////////////////////
