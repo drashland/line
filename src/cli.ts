@@ -7,7 +7,7 @@ export class Cli {
   /**
    * See Line.command.
    */
-  public command: Line.Command;
+  public command: Line.Interfaces.ICommand;
 
   /**
    * All of the subcommands from the command, but instantiated.
@@ -18,6 +18,8 @@ export class Cli {
    * See Line.CommandLine.
    */
   public command_line: Line.CommandLine;
+
+  public command_options: string[] = [];
 
   /**
    * This CLI's description.
@@ -47,15 +49,49 @@ export class Cli {
     this.name = configs.name;
     this.description = configs.description;
     this.version = configs.version;
-    this.command = new (configs.command as typeof Line.Command)();
-    // TODO(crookse) Validate that this.command has all fields and methods.
-    this.command_line = new Line.CommandLine(Deno.args);
+    this.command = new (configs.command as typeof Line.Command)(this);
+
+    if (Object.keys(this.command.options).length > 0) {
+      for (const key in this.command.options) {
+        let split = key.split(",");
+        split.forEach((value) => {
+          this.command_options.push(value.trim());
+        });
+      }
+    }
+
+    this.command_line = new Line.CommandLine(Deno.args, this);
+    this.validateCommand();
     this.instantiateSubcommands();
   }
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - METHODS - PUBLIC ////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
+
+  protected validateCommand(): void {
+    if (!this.command.signature) {
+      throw new Error("The main command is missing the `signature` property.");
+    }
+
+    let commandTakesArgs = false;
+    const split = this.command.signature.split(" ");
+    split.shift();
+    if (split.length > 0) {
+      commandTakesArgs = true;
+      if (this.command.subcommands.length > 0) {
+        throw new Error("The main command cannot take in args and have subcommands.");
+      }
+    }
+
+    if (commandTakesArgs) {
+      this.command_line.matchArgumentsToNames(this.command);
+    }
+
+    if (!this.command.handle) {
+      throw new Error("The main command is missing the `handle()` method.");
+    }
+  }
 
   /**
    * Run this CLI.
@@ -135,7 +171,7 @@ export class Cli {
 
     help += `USAGE\n\n`;
     help +=
-      `    ${this.command.command} [option | [[subcommand] [args] [deno flags] [subcommand options]]]\n`;
+      `    ${this.command.signature} [option | [[subcommand] [args] [deno flags] [subcommand options]]]\n`;
     help += `\n`;
 
     help += `OPTIONS\n\n`;

@@ -53,7 +53,7 @@ export class Subcommand {
    *
    * @returns The value of the argument or undefined if no value was specified.
    */
-  public getArgumentValue(argument: string): string|undefined {
+  public getArgumentValue(argument: string): string | undefined {
     return this.cli.command_line.getArgumentValue(argument);
   }
 
@@ -65,7 +65,7 @@ export class Subcommand {
    * @returns True if the option exists in the command line or the value of the
    * option if one was specified.
    */
-  public getOptionValue(option: string): string|boolean {
+  public getOptionValue(option: string): string|boolean|undefined {
     return this.cli.command_line.getOptionValue(option);
   }
 
@@ -83,7 +83,7 @@ export class Subcommand {
     let help = `USAGE\n\n`;
 
     help +=
-      `    ${this.cli.command.command} ${this.formatSignature()} [deno flags] [options]\n`;
+      `    ${this.cli.command.signature} ${this.formatSignature()} [deno flags] [options]\n`;
 
     if (Object.keys(this.arg_descriptions).length > 0) {
       help += "\n";

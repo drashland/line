@@ -3,25 +3,35 @@ import * as Line from "../mod.ts";
 /**
  * The main command of the CLI.
  */
-export class Command {
+export class Command implements Line.Interfaces.ICommand {
   /**
    * The command that is used on the command line.
    */
-  public command!: string;
+  // TODO(crookse) Make command take in arguments
+  public signature!: string;
 
   /**
    * An array of subcommands that this command can execute.
    */
   public subcommands: typeof Line.Subcommand[] = [];
 
+  public cli: Line.Cli;
+
+  public options: {[k: string]: string} = {};
+
+  constructor(cli: Line.Cli) {
+    this.cli = cli;
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - METHODS - PUBLIC ////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
 
-  /**
-   * A method to be implemented by the child class.
-   */
-  public handle(): void {
-    return;
+  public arg(arg: string): string | undefined {
+    return this.cli.command_line.getArgumentValue(arg);
+  }
+
+  public option(option: string): boolean | string | undefined {
+    return this.cli.command_line.getOptionValue(option);
   }
 }
