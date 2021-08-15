@@ -65,7 +65,7 @@ export class CommandLine {
     const formatted: string[] = [];
 
     this.deno_args.forEach((item: string) => {
-      if (item.includes("--") && item.includes("=")) {
+      if ((item.match(/^-/) || item.match(/^--/)) && item.includes("=")) {
         const split = item.split("=");
         formatted.push(split[0]);
         formatted.push(split[1]);
