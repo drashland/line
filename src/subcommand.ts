@@ -1,44 +1,44 @@
-import { ILogger, Line, SubcommandOption } from "../mod.ts";
+import * as Line from "../mod.ts";
 
 /**
- * A class that represents a subcommand as an object.
+ * This class represents a subcommand. It can only be executed by the main
+ * command.
  */
 export class Subcommand {
   /**
-   * The CLI processing this subcommand.
+   * This subcommand's signature. For example, `copy [source] [destination]`.
    */
-  public cli: Line;
+  public signature!: string;
 
   /**
    * This subcommand's description.
    */
-  public description = "";
-
-  /**
-   * This subcommand's name.
-   */
-  public name = "";
+  public description!: string;
 
   /**
    * This subcommand's options.
    */
-  public options: (typeof SubcommandOption[] | SubcommandOption[]) = [];
+  public options: {[k: string]: string} = {};
 
   /**
-   * This subcommand's signature. For example, "run [arg1] [arg2]".
+   * An object that describes the arguments in the signature. If a subcommand
+   * defines this property, then it will be used in the help menu.
    */
-  public signature = "";
+  public arg_descriptions: {[k: string]: string} = {};
+
+  /**
+   * See Line.Cli.
+   */
+  public cli: Line.Cli;
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Construct an object of this class.
-   *
-   * @param cli - See this.cli property.
+   * @param cli - See Line.Cli.
    */
-  constructor(cli: Line) {
+  constructor(cli: Line.Cli) {
     this.cli = cli;
   }
 
@@ -47,118 +47,105 @@ export class Subcommand {
   //////////////////////////////////////////////////////////////////////////////
 
   /**
-   * A convenience method to help exit the CLI from a subcommand.
+   * Get the value of the specified argument.
    *
-   * @param code - The exit code to use in the Deno.exit() call (e.g.,
-   * Deno.exit(1)).
-   * @param messageType - The type of message to display before exiting. See
-   * ILogger keys for allowed values.
-   * @param message - The message to display before exiting.
-   * @param cb - (optional) A callback to execute before exiting. This is useful
-   * if you want to show the help menu before exiting.
+   * @param argumentName - The argument in question.
+   *
+   * @returns The value of the argument or undefined if no value was specified.
    */
-  public exit(
-    code: number,
-    messageType: keyof ILogger,
-    message: string,
-    cb?: () => void,
-  ): void {
-    this.cli.exit(code, messageType, message, cb);
+  public getArgumentValue(argument: string): string|undefined {
+    return this.cli.command_line.getArgumentValue(argument);
   }
 
   /**
-   * Get an argument value from the command line.
+   * Get the value of the specified option.
    *
-   * @param argumentName - The name of the argument containing the value.
+   * @param option - The option in question.
    *
-   * @returns The value of the argument or null if no value.
+   * @returns True if the option exists in the command line or the value of the
+   * option if one was specified.
    */
-  public getArgumentValue(argumentName: string): string | null {
-    return this.cli.command_line.getArgumentValue(argumentName);
+  public getOptionValue(option: string): string|boolean {
+    return this.cli.command_line.getOptionValue(option);
   }
 
   /**
-   * Get the Deno flags from the command line.
-   *
-   * @returns The Deno flags.
-   */
-  public getDenoFlags(): string[] {
-    return this.cli.command_line.getDenoFlags();
-  }
-
-  /**
-   * Get an option value from the command line.
-   *
-   * @param optionName - The name of the option to get.
-   *
-   * @returns The value of the option or null if no value.
-   */
-  public getOptionValue(optionName: string): string | null {
-    const results = (this.options as SubcommandOption[])
-      .filter((option: SubcommandOption) => {
-        return option.name == optionName;
-      });
-
-    const exists = results[0] ?? null;
-
-    if (!exists) {
-      this.cli.logger.error(
-        `The "${optionName}" option does not exist on "${this.name}" subcommand.`,
-      );
-      Deno.exit(1);
-    }
-
-    return this.cli.command_line.getOptionValue(optionName);
-  }
-
-  /**
-   * The handler for this subcommand. All subcommand classes must define this
-   * method, so that they can be executed.
+   * A method to be implemented by a child class.
    */
   public handle(): void {
     return;
   }
 
   /**
-   * Take the array of Option classes in this.options and instantiate all of
-   * them.
-   */
-  public instantiateOptions(): void {
-    const options: SubcommandOption[] = [];
-
-    (this.options as unknown as (typeof SubcommandOption)[])
-      .filter((option: typeof SubcommandOption) => {
-        const o = new option(this);
-        options.push(o);
-      });
-
-    this.options = options;
-  }
-
-  /**
    * Show this subcommand's help menu.
    */
-  public showHelp(returnOutput = false): string | void {
+  public showHelp(): string | void {
     let help = `USAGE\n\n`;
 
     help +=
-      `    ${this.cli.command} ${this.signature} [deno flags] [options]\n`;
-    help += "\n";
+      `    ${this.cli.command.command} ${this.formatSignature()} [deno flags] [options]\n`;
 
-    if (this.options.length > 0) {
-      help += "OPTIONS\n\n";
-      (this.options as SubcommandOption[]).forEach(
-        (option: SubcommandOption) => {
-          help += `    ${option.name}\n`;
-          help += `        ${option.description}\n`;
-        },
-      );
+    if (Object.keys(this.arg_descriptions).length > 0) {
+      help += "\n";
+      help += "ARGS\n\n";
+      for (const key in this.arg_descriptions) {
+        help += `    ${key}\n`;
+        help += `        ${this.arg_descriptions[key]}\n`;
+      }
     }
 
-    if (returnOutput) {
-      return help;
+    if (Object.keys(this.options).length > 0) {
+      help += "\n";
+      help += "OPTIONS\n\n";
+      for (const key in this.options) {
+        help += `    ${this.formatOptions(key)}\n`;
+        help += `        ${this.options[key]}\n`;
+      }
     }
 
     console.log(help);
+  }
+
+  /**
+   * Format the signature for help menu purposes.
+   *
+   * @returns The formatted signature.
+   */
+  protected formatSignature(): string {
+    const split = this.signature.split(" ");
+    split.shift();
+
+    let formatted = "";
+
+    split.forEach((arg: string, index: number) => {
+      if (split.length == (index + 1)) {
+        formatted += `${arg.replace("[", "[arg:")}`;
+      } else {
+        formatted += `${arg.replace("[", "[arg:")} `;
+      }
+    });
+
+    return formatted;
+  }
+
+  /**
+   * Format the options for help menu purposes.
+   *
+   * @returns The formatted options.
+   */
+  protected formatOptions(options: string): string {
+    let formatted = "";
+
+    const split = options.split(",");
+
+    split.forEach((option: string, index: number) => {
+      if (split.length == (index + 1)) {
+        formatted += `${option.trim()}`;
+      } else {
+        formatted += `${option.trim()}, `;
+      }
+    });
+
+    return formatted;
   }
 }

@@ -25,14 +25,7 @@ export class CommandLine {
    * example, the command "rhum run tests/ --ftc hello --fts 'good goodbye'"
    * will become { "--ftc": "hello", "--fts": "good goodbye" } in this property.
    */
-  public options: { [key: string]: string | undefined } = {};
-
-  /**
-   * The subcommand in this command line. This is the second argument in the
-   * command line. For example, "commit" is the subcommand in the command "git
-   * commit".
-   */
-  public subcommand: string;
+  public options: { [key: string]: string | boolean } = {};
 
   /**
    * See https://doc.deno.land/builtin/stable#Deno.args.
@@ -52,20 +45,13 @@ export class CommandLine {
    * Construct an object of this class.
    *
    * @param denoArgs - See this.deno_args property.
-   * @param subcommands - Used to match subcommand arguments to arguments in the
-   * command line.
    */
-  constructor(denoArgs: string[], subcommands: Subcommand[]) {
-    this.deno_args = denoArgs;
-
-    // The second argument is always the subcommand
-    this.subcommand = this.deno_args.shift() as string;
+  constructor(denoArgs: string[] = []) {
+    this.deno_args = denoArgs.slice();
 
     this.extractDenoFlagsFromArguments();
 
     this.extractOptionsFromArguments();
-
-    this.matchArgumentsToNames(subcommands);
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -80,10 +66,10 @@ export class CommandLine {
    * property. For example, if the signature is "run [some-cool-arg]", then the
    * argument name would be "[some-cool-arg]".
    *
-   * @returns The argument's value or null if it has no value.
+   * @returns The argument's value or undefined if it has no value.
    */
-  public getArgumentValue(argumentName: string): null | string {
-    return this.arguments["[" + argumentName + "]"] ?? null;
+  public getArgumentValue(argumentName: string): undefined | string {
+    return this.arguments["[" + argumentName + "]"] ?? undefined;
   }
 
   /**
@@ -100,10 +86,16 @@ export class CommandLine {
    *
    * @param optionName - The name of the option to get.
    *
-   * @returns The option's value or null if it has no value.
+   * @returns The option's value or true if it was passed in. Sometimes options
+   * do not require a value - only that they exist. For example:
+   *
+   *     `chmod -R`
+   *
+   * In the case of `chmod`, the `-R` option does not require a value. `chmod`
+   * just checks if it is passed in and handles it accordingly.
    */
-  public getOptionValue(optionName: string): null | string {
-    return this.options[optionName] ?? null;
+  public getOptionValue(optionName: string): boolean | string {
+    return this.options[optionName] ?? true;
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -146,7 +138,7 @@ export class CommandLine {
   protected extractOptionsFromArguments(): void {
     this.deno_args.forEach((datum: string) => {
       if (datum.includes("--")) {
-        this.options[datum] = undefined;
+        this.options[datum] = true;
       }
     });
 
@@ -175,15 +167,13 @@ export class CommandLine {
    *
    * Note that the argument names contain their surrounding brackets.
    */
-  protected matchArgumentsToNames(subcommands: Subcommand[]): void {
-    subcommands.forEach((subcommand: Subcommand) => {
-      const sigSplit = subcommand.signature.split(" ");
-      sigSplit.shift(); // Take off the subcommand and leave only the args
+  public matchArgumentsToNames(subcommand: Subcommand): void {
+    const sigSplit = subcommand.signature.split(" ");
+    sigSplit.shift(); // Take off the subcommand and leave only the args
 
-      // Match arguments in the signature to arguments in the command line
-      for (let i = 0; i < sigSplit.length; i++) {
-        this.arguments[sigSplit[i]] = this.deno_args[i];
-      }
-    });
+    // Match arguments in the signature to arguments in the command line
+    for (let i = 0; i < sigSplit.length; i++) {
+      this.arguments[sigSplit[i]] = this.deno_args[i + 1];
+    }
   }
 }
