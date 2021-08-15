@@ -51,7 +51,7 @@ export class Cli {
     this.description = configs.description;
     this.version = configs.version;
     this.command = new (configs.command as typeof Line.Command)(this);
-    this.command_line = new Line.CommandLine(Deno.args, this);
+    this.command_line = new Line.CommandLine(this, Deno.args);
   }
 
   //////////////////////////////////////////////////////////////////////////////

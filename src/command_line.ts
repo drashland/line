@@ -30,7 +30,7 @@ export class CommandLine {
   /**
    * See https://doc.deno.land/builtin/stable#Deno.args.
    */
-  protected deno_args: string[];
+  public deno_args: string[];
 
   /**
    * See https://deno.land/manual/getting_started/permissions#permissions-list.
@@ -48,141 +48,15 @@ export class CommandLine {
    *
    * @param denoArgs - See this.deno_args property.
    */
-  constructor(denoArgs: string[] = [], cli: Line.Cli) {
+  constructor(cli: Line.Cli, denoArgs: string[] = []) {
     this.cli = cli;
-    this.deno_args = denoArgs.slice();
-
+    this.deno_args = denoArgs.slice(); // Make a copy so they can be mutated
     this.formatCommandLine();
-
-    this.extractDenoFlagsFromArguments();
   }
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - METHODS - PUBLIC ////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
-
-  protected formatCommandLine(): void {
-    const formatted: string[] = [];
-
-    this.deno_args.forEach((item: string) => {
-      if ((item.match(/^-/) || item.match(/^--/)) && item.includes("=")) {
-        const split = item.split("=");
-        formatted.push(split[0]);
-        formatted.push(split[1]);
-        return;
-      }
-
-      formatted.push(item);
-    });
-
-    this.deno_args = formatted;
-  }
-
-  /**
-   * Get an argument value from Deno.args.
-   *
-   * @param argumentName - The name of the argument to get. The name of the
-   * argument should match the argument's signature in a subcommand's signature
-   * property. For example, if the signature is "run [some-cool-arg]", then the
-   * argument name would be "[some-cool-arg]".
-   *
-   * @returns The argument's value or undefined if it has no value.
-   */
-  public getArgumentValue(
-    command: Line.Command | Line.Subcommand,
-    argumentName: string,
-  ): undefined | string {
-    let value = this.arguments[argumentName];
-
-    if (!value) {
-      return undefined;
-    }
-
-    // If the value is NOT an option on the subcommand, then we return the value
-    if (command.options_parsed.indexOf(value) == -1) {
-      return value;
-    }
-
-    return undefined;
-  }
-
-  /**
-   * Get the Deno flags (e.g., --allow-net) taken from Deno.args.
-   *
-   * @returns An array of Deno flags.
-   */
-  public getDenoFlags(): string[] {
-    return this.deno_flags;
-  }
-
-  /**
-   * Get an option value from Deno.args.
-   *
-   * @param optionName - The name of the option to get.
-   *
-   * @returns The option's value or true if it was passed in. Sometimes options
-   * do not require a value - only that they exist. For example:
-   *
-   *     `chmod -R`
-   *
-   * In the case of `chmod`, the `-R` option does not require a value. `chmod`
-   * just checks if it is passed in and handles it accordingly.
-   */
-  public getOptionValue(
-    command: Line.Command | Line.Subcommand,
-    opt: string,
-  ): boolean | string | undefined {
-    const shortName = `-${opt}`;
-    const longName = `--${opt}`;
-
-    if (shortName in this.options) {
-      if (command.options_parsed.indexOf(shortName) != -1) {
-        return this.options[shortName];
-      }
-    }
-
-    if (longName in this.options) {
-      if (command.options_parsed.indexOf(longName) != -1) {
-        return this.options[longName];
-      }
-    }
-
-    return undefined;
-  }
-
-  //////////////////////////////////////////////////////////////////////////////
-  // FILE MARKER - METHODS - PROTECTED /////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * Extract all Deno flags from the arguments.
-   */
-  protected extractDenoFlagsFromArguments(): void {
-    const denoFlags = [
-      "--allow-all",
-      "--allow-net",
-      "--allow-read",
-      "--allow-run",
-      "--allow-write",
-      "--reload",
-      "-A",
-    ];
-
-    this.deno_args.forEach((datum: string) => {
-      if (denoFlags.indexOf(datum) != -1) {
-        this.deno_flags.push(datum);
-      }
-    });
-
-    for (const index in this.deno_flags) {
-      // Get the location of the flag in the line
-      const flag = this.deno_flags[index];
-      const flagIndex = this.deno_args.indexOf(flag);
-
-      // Remove the flag from the line
-      this.deno_args.splice(flagIndex, 1);
-    }
-  }
 
   /**
    * Extract all options and their values from Deno.args.
@@ -233,22 +107,80 @@ export class CommandLine {
   }
 
   /**
-   * Match all of the subcommand's argument names to their respective arguments
-   * based on location in the command line. For example, the first element in
-   * the signature will be taken off, which is the subcommand name. Everything
-   * that follows the subcommand name will be the argument names. For example,
-   * if the subcommand's signature is "run <directory> {file}", and the
-   * arguments in Deno.args are "['thisDir', 'thisFile']", then the "run"
-   * subcommand name will be taken off and the following object will be created:
-   * { "<directory>: "thisDir", "{file}: "thisFile" }.
+   * Get an argument value from Deno.args.
    *
-   * Note that the argument names contain their surrounding brackets.
+   * @param argumentName - The name of the argument to get. The name of the
+   * argument should match the argument's signature in a subcommand's signature
+   * property. For example, if the signature is "run [some-cool-arg]", then the
+   * argument name would be "[some-cool-arg]".
+   *
+   * @returns The argument's value or undefined if it has no value.
+   */
+  public getArgumentValue(
+    command: Line.Command | Line.Subcommand,
+    argumentName: string,
+  ): undefined | string {
+    let value = this.arguments[argumentName];
+
+    if (!value) {
+      return undefined;
+    }
+
+    // If the value is NOT an option on the subcommand, then we return the value
+    if (command.options_parsed.indexOf(value) == -1) {
+      return value;
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Get an option value from Deno.args.
+   *
+   * @param optionName - The name of the option to get.
+   *
+   * @returns The option's value or true if it was passed in. Sometimes options
+   * do not require a value - only that they exist. For example:
+   *
+   *     `chmod -R`
+   *
+   * In the case of `chmod`, the `-R` option does not require a value. `chmod`
+   * just checks if it is passed in and handles it accordingly.
+   */
+  public getOptionValue(
+    command: Line.Command | Line.Subcommand,
+    opt: string,
+  ): boolean | string | undefined {
+    const shortName = `-${opt}`;
+    const longName = `--${opt}`;
+
+    if (shortName in this.options) {
+      if (command.options_parsed.indexOf(shortName) != -1) {
+        return this.options[shortName];
+      }
+    }
+
+    if (longName in this.options) {
+      if (command.options_parsed.indexOf(longName) != -1) {
+        return this.options[longName];
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Match all of the commands's argument names to their respective arguments
+   * based on location of the argument in the command line.
+   *
+   * @param command - The command in question that should have the command line
+   * arguments matched to its signature.
    */
   public matchArgumentsToNames(
     command: Line.Interfaces.ICommand | Line.Subcommand,
   ): void {
     const sigSplit = command.signature.split(" ");
-    sigSplit.shift(); // Take off the subcommand and leave only the args
+    sigSplit.shift(); // Take off the command and leave only the args
 
     // Match arguments in the signature to arguments in the command line
     for (let i = 0; i < sigSplit.length; i++) {
@@ -259,5 +191,30 @@ export class CommandLine {
           this.deno_args[i + 1];
       }
     }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // FILE MARKER - METHODS - PROTECTED /////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Format the command line so that it can be further parsed during runtime.
+   * For example, split options from their values by removing the `=` sign.
+   */
+  protected formatCommandLine(): void {
+    const formatted: string[] = [];
+
+    this.deno_args.forEach((item: string) => {
+      if ((item.match(/^-/) || item.match(/^--/)) && item.includes("=")) {
+        const split = item.split("=");
+        formatted.push(split[0]);
+        formatted.push(split[1]);
+        return;
+      }
+
+      formatted.push(item);
+    });
+
+    this.deno_args = formatted;
   }
 }

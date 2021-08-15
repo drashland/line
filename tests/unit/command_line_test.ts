@@ -1,223 +1,183 @@
 import { Rhum } from "../deps.ts";
-import { CommandLine, Line, Subcommand } from "../../mod.ts";
-
-class Subcommand1Arg extends Subcommand {
-  public signature = "run [arg1]";
-  public description = "Run something.";
-}
-
-class Subcommand3Args extends Subcommand {
-  public signature = "run [a] [b] [c]";
-  public description = "Run something.";
-}
-
-const l = new Line({
-  command: "lt",
-  name: "Tester",
-  description: "Tester description",
-  subcommands: [],
-  version: "v1.0.0",
-});
-
-const subcommand1Arg = new Subcommand1Arg(l);
-const subcommand3Args = new Subcommand3Args(l);
+import * as Line from "../../mod.ts";
 
 Rhum.testPlan("command_line_test.ts", () => {
   Rhum.testSuite("constructor()", () => {
-    Rhum.testCase("Sets the sucommand property", () => {
-      const C = new CommandLine(["hiya:)"], []);
-      Rhum.asserts.assertEquals(C.subcommand, "hiya:)");
-    });
-    Rhum.testCase("Extracts the options", () => {
-      const C = new CommandLine([
-        "hiya:)",
-        "--givemoney",
-        "true",
-        "--amount",
-        "10000000",
-        "--currency",
-        "GBP",
-      ], []);
-      Rhum.asserts.assertEquals(C.options, {
-        "--amount": "10000000",
-        "--currency": "GBP",
-        "--givemoney": "true",
+    Rhum.testCase("formats the command line", () => {
+      const cli = new Line.Cli({
+        name: "Main command with arguments",
+        description: "A main command with arguments",
+        version: "v1.0.0",
+        command: Command1,
       });
-    });
-    Rhum.testCase("ignores arguments not in subcommand signature", () => {
-      const commandLine = new CommandLine(
-        ["run", "he", "ll", "a", "ignored"],
-        [subcommand3Args],
+
+      const c = new Line.CommandLine(
+        cli,
+        ["--print=true"]
       );
-      const actual = commandLine.arguments;
-      const expected = {
-        "[a]": "he",
-        "[b]": "ll",
-        "[c]": "a",
-      };
-      Rhum.asserts.assertEquals(actual, expected);
-    });
-    Rhum.testCase("Sets the arguments", () => {
-      // const L = new Line({
-      //   name: "hiya:)",
-      //   description: "Say hi :)",
-      //   subcommands: [S],
-      //   command: "hey_gurl",
-      //   version: "v4.2.0" // lol
-      // })
-      const C = new CommandLine(
-        ["hey:)", "marco", "polo", "ahyoufoundme"],
-        [subcommand3Args],
-      );
-      Rhum.asserts.assertEquals(C.arguments, {
-        "[a]": "marco",
-        "[b]": "polo",
-        "[c]": "ahyoufoundme",
-      });
+      Rhum.asserts.assertEquals(c.deno_args, ["--print", "true"]);
     });
   });
+
+  Rhum.testSuite("extractOptionsFromArguments()", () => {
+    Rhum.testCase("extracts all options", () => {
+      const cli = getCli(Command1);
+      const c = new Line.CommandLine(
+        cli,
+        ["--print=true", "--some-option", "some-option-value", "-t"]
+      );
+
+      c.extractOptionsFromArguments(new Command1(cli));
+
+      Rhum.asserts.assertEquals(
+        c.options,
+        {
+          "--print": true,
+          "--some-option": "some-option-value",
+          "-t": true,
+        }
+      );
+    });
+  });
+
   Rhum.testSuite("getArgumentValue()", () => {
-    Rhum.testCase("can get an argument", () => {
-      const commandLine = new CommandLine(
-        ["run", "hella"],
-        [subcommand1Arg],
+    Rhum.testCase("gets the argument if it exists", () => {
+      const cli = getCli(Command1);
+      const c = new Line.CommandLine(
+        cli,
+        ["some-source"]
       );
-      const actual = commandLine.getArgumentValue("arg1");
-      const expected = "hella";
-      Rhum.asserts.assertEquals(actual, expected);
-    });
-    Rhum.testCase("can get multiple arguments", () => {
-      const commandLine = new CommandLine(
-        ["run", "he", "ll", "a"],
-        [subcommand3Args],
+
+      const command = new Command1(cli);
+      command.setUp();
+      c.matchArgumentsToNames(command);
+
+      Rhum.asserts.assertEquals(
+        c.getArgumentValue(command, "source"),
+        "some-source"
       );
-      const a1 = commandLine.getArgumentValue("a");
-      const a2 = commandLine.getArgumentValue("b");
-      const a3 = commandLine.getArgumentValue("c");
-      Rhum.asserts.assertEquals(a1, "he");
-      Rhum.asserts.assertEquals(a2, "ll");
-      Rhum.asserts.assertEquals(a3, "a");
-    });
-  });
-
-  Rhum.testSuite("getDenoFlags()", () => {
-    Rhum.testCase("gets Deno flags after subcommand", () => {
-      const commandLine = new CommandLine(
-        ["run", "--allow-all", "hella"],
-        [subcommand1Arg],
-      );
-      const a1 = commandLine.getArgumentValue("arg1");
-      const e1 = "hella";
-      Rhum.asserts.assertEquals(a1, e1);
-
-      const a2 = commandLine.getDenoFlags();
-      const e2 = ["--allow-all"];
-      Rhum.asserts.assertEquals(a2, e2);
-    });
-
-    Rhum.testCase("gets Deno flags after subcommand argument", () => {
-      const commandLine = new CommandLine(
-        ["run", "hella", "--allow-all"],
-        [subcommand1Arg],
-      );
-      const a1 = commandLine.getArgumentValue("arg1");
-      const e1 = "hella";
-      Rhum.asserts.assertEquals(a1, e1);
-
-      const a2 = commandLine.getDenoFlags();
-      const e2 = ["--allow-all"];
-      Rhum.asserts.assertEquals(a2, e2);
-    });
-
-    Rhum.testCase("gets only recognized Deno flags", () => {
-      const commandLine = new CommandLine(
-        [
-          "run",
-          "hella",
-          "--allow-read",
-          "--allow-run",
-          "--allow-write",
-          "--allow-net",
-        ],
-        [subcommand1Arg],
-      );
-      const a1 = commandLine.getArgumentValue("arg1");
-      const e1 = "hella";
-      Rhum.asserts.assertEquals(a1, e1);
-
-      const a2 = commandLine.getDenoFlags();
-      const e2 = [
-        "--allow-read",
-        "--allow-run",
-        "--allow-write",
-        "--allow-net",
-      ];
-      Rhum.asserts.assertEquals(a2, e2);
     });
   });
 
   Rhum.testSuite("getOptionValue()", () => {
-    Rhum.testCase("can get an option", () => {
-      const commandLine = new CommandLine(
-        [
-          "run",
-          "hella",
-          "--option1",
-          "hella",
-        ],
-        [subcommand1Arg],
+    // 'exists' means that the option was passed in without any value. While it
+    // does not have a value, it 'exists' in the command line. Therefore, the
+    // option's value is true -- meaning it exists.
+    Rhum.testCase("returns true if the option 'exists'", () => {
+      const cli = getCli(Command1);
+      const c = new Line.CommandLine(
+        cli,
+        ["-p"]
       );
-      const a1 = commandLine.getOptionValue("--option1");
-      const e1 = "hella";
-      Rhum.asserts.assertEquals(a1, e1);
+
+      const command = new Command1(cli);
+      command.setUp();
+
+      c.extractOptionsFromArguments(command);
+
+      Rhum.asserts.assertEquals(
+        c.getOptionValue(command, "p"),
+        true,
+      );
     });
 
-    Rhum.testCase("can get multiple options", () => {
-      const commandLine = new CommandLine(
-        [
-          "run",
-          "hella",
-          "--option1",
-          "he",
-          "--option2",
-          "ll",
-          "--option3",
-          "a",
-        ],
-        [subcommand1Arg],
+    Rhum.testCase("returns the value associated with the option", () => {
+      const cli = getCli(Command1);
+      const c = new Line.CommandLine(
+        cli,
+        ["-p=test", "--long", "w00t"]
       );
-      const a1 = commandLine.getOptionValue("--option1");
-      const e1 = "he";
-      Rhum.asserts.assertEquals(a1, e1);
 
-      const a2 = commandLine.getOptionValue("--option2");
-      const e2 = "ll";
-      Rhum.asserts.assertEquals(a2, e2);
+      const command = new Command1(cli);
+      command.setUp();
 
-      const a3 = commandLine.getOptionValue("--option3");
-      const e3 = "a";
-      Rhum.asserts.assertEquals(a3, e3);
+      c.extractOptionsFromArguments(command);
+
+      Rhum.asserts.assertEquals(
+        c.getOptionValue(command, "p"),
+        "test",
+      );
+
+      Rhum.asserts.assertEquals(
+        c.getOptionValue(command, "long"),
+        "w00t",
+      );
     });
 
-    Rhum.testCase("can get options after the subcommand", () => {
-      const commandLine = new CommandLine(
-        [
-          "run",
-          "--option1",
-          "hellaOption",
-          "hellaArg",
-        ],
-        [subcommand1Arg],
+    Rhum.testCase("returns undefined for unrecognized options", () => {
+      const cli = getCli(Command1);
+      const c = new Line.CommandLine(
+        cli,
+        ["-d=test", "--nope", "w00t"]
       );
-      const a1 = commandLine.getOptionValue("--option1");
-      const e1 = "hellaOption";
-      Rhum.asserts.assertEquals(a1, e1);
 
-      const a2 = commandLine.getArgumentValue("arg1");
-      const e2 = "hellaArg";
-      Rhum.asserts.assertEquals(a2, e2);
+      const command = new Command1(cli);
+      command.setUp();
+
+      c.extractOptionsFromArguments(command);
+
+      Rhum.asserts.assertEquals(
+        c.getOptionValue(command, "d"),
+        undefined,
+      );
+
+      Rhum.asserts.assertEquals(
+        c.getOptionValue(command, "nope"),
+        undefined,
+      );
+    });
+  });
+
+  Rhum.testSuite("matchArgumentsToNames()", () => {
+    Rhum.testCase("matches arguments to command signature", () => {
+      const cli = getCli(Command1);
+      const c = new Line.CommandLine(
+        cli,
+        ["some-source", "some-destination"]
+      );
+
+      c.matchArgumentsToNames(new Command1(cli));
+
+      Rhum.asserts.assertEquals(
+        c.arguments,
+        {
+          "source": "some-source",
+          "destination": "some-destination",
+        }
+      );
     });
   });
 });
 
 Rhum.run();
+
+////////////////////////////////////////////////////////////////////////////////
+// FILE MARKER - HELPERS ///////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+function getCli(command: typeof Line.Command) {
+  return new Line.Cli({
+    name: "CLI Name",
+    description: "CLI Description",
+    version: "v1.0.0",
+    command: command,
+  });
+}
+
+class Command1 extends Line.Command {
+  public signature = "cp [source] [destination]";
+
+  public arguments = {
+    source: "The source file to copy.",
+    destination: "The destination of the copied file.",
+  };
+
+  public options = {
+    "-p, --print": "Print the results to the screen.",
+    "-l, --long": "Some option IDK.",
+  };
+
+  public handle(): void {
+    console.log(this.arg("source"), this.arg("destination"));
+  }
+}
