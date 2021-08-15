@@ -3,11 +3,14 @@ import * as Line from "../mod.ts";
 export interface ICommand {
   signature: string;
   subcommands: typeof Line.Subcommand[];
-  options: {[k: string]: string};
+  arguments: { [k: string]: string };
+  options: { [k: string]: string };
+  options_parsed: string[];
+  takes_args: boolean;
   cli: Line.Cli;
   handle?: () => void;
+  setUp?: () => void;
 }
-
 
 /**
  * The options that can be passed into the CLI.

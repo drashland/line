@@ -1,4 +1,4 @@
-import * as Line  from "../mod.ts";
+import * as Line from "../mod.ts";
 
 /**
  * The command line is the entire line entered by the user. For example, if the
@@ -52,14 +52,31 @@ export class CommandLine {
     this.cli = cli;
     this.deno_args = denoArgs.slice();
 
-    this.extractDenoFlagsFromArguments();
+    this.formatCommandLine();
 
-    this.extractOptionsFromArguments();
+    this.extractDenoFlagsFromArguments();
   }
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - METHODS - PUBLIC ////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
+
+  protected formatCommandLine(): void {
+    const formatted: string[] = [];
+
+    this.deno_args.forEach((item: string) => {
+      if (item.includes("--") && item.includes("=")) {
+        const split = item.split("=");
+        formatted.push(split[0]);
+        formatted.push(split[1]);
+        return;
+      }
+
+      formatted.push(item);
+    });
+
+    this.deno_args = formatted;
+  }
 
   /**
    * Get an argument value from Deno.args.
@@ -71,8 +88,22 @@ export class CommandLine {
    *
    * @returns The argument's value or undefined if it has no value.
    */
-  public getArgumentValue(argumentName: string): undefined | string {
-    return this.arguments["[" + argumentName + "]"] ?? undefined;
+  public getArgumentValue(
+    command: Line.Command | Line.Subcommand,
+    argumentName: string,
+  ): undefined | string {
+    let value = this.arguments[argumentName];
+
+    if (!value) {
+      return undefined;
+    }
+
+    // If the value is NOT an option on the subcommand, then we return the value
+    if (command.options_parsed.indexOf(value) == -1) {
+      return value;
+    }
+
+    return undefined;
   }
 
   /**
@@ -97,14 +128,23 @@ export class CommandLine {
    * In the case of `chmod`, the `-R` option does not require a value. `chmod`
    * just checks if it is passed in and handles it accordingly.
    */
-  public getOptionValue(optionName: string): boolean | string | undefined {
-    const opt = `--${optionName}`;
-    if (opt in this.options) {
-      if (this.options[opt] != undefined) {
-        return this.options[opt];
-      }
+  public getOptionValue(
+    command: Line.Command | Line.Subcommand,
+    opt: string,
+  ): boolean | string | undefined {
+    const shortName = `-${opt}`;
+    const longName = `--${opt}`;
 
-      return true;
+    if (shortName in this.options) {
+      if (command.options_parsed.indexOf(shortName) != -1) {
+        return this.options[shortName];
+      }
+    }
+
+    if (longName in this.options) {
+      if (command.options_parsed.indexOf(longName) != -1) {
+        return this.options[longName];
+      }
     }
 
     return undefined;
@@ -147,9 +187,11 @@ export class CommandLine {
   /**
    * Extract all options and their values from Deno.args.
    */
-  protected extractOptionsFromArguments(): void {
+  public extractOptionsFromArguments(
+    command: Line.Command | Line.Subcommand,
+  ): void {
     this.deno_args.forEach((datum: string) => {
-      if (datum.includes("--")) {
+      if (datum.match(/^-/)) {
         this.options[datum] = true; // Default value is true
       }
     });
@@ -163,20 +205,31 @@ export class CommandLine {
       // the option is another option, then all we do is say, "Yes, the option
       // exists in the command line," and we just assign it a `true` value.
       let value: string | boolean = this.deno_args[index + 1];
-      if (this.cli.command_options.length > 0) {
-        const isOption = this.cli.command_options.indexOf(value) != -1;
-        if (isOption) {
-          value = true;
-        }
+
+      const isOption = command.options_parsed.indexOf(value) != -1 ||
+        (value in this.options);
+
+      if (isOption) {
+        value = true;
+      }
+
+      // If the option is last in the deno args and has no value, then we do not
+      // want its value to be `undefined`. We want its value to be `true`
+      // because it exists in the command line.
+      if (this.deno_args.length <= (index + 1)) {
+        value = true;
+      }
+
+      if (value == "true") {
+        value = true;
+      }
+
+      if (value == "false") {
+        value = false;
       }
 
       this.options[optionName] = value;
-
-      // Remove the option from the line because it now has a name and a value
-      this.deno_args.splice(index, 1);
     }
-
-    console.log(this.options);
   }
 
   /**
@@ -191,16 +244,19 @@ export class CommandLine {
    *
    * Note that the argument names contain their surrounding brackets.
    */
-  public matchArgumentsToNames(command: Line.Interfaces.ICommand | Line.Subcommand): void {
+  public matchArgumentsToNames(
+    command: Line.Interfaces.ICommand | Line.Subcommand,
+  ): void {
     const sigSplit = command.signature.split(" ");
     sigSplit.shift(); // Take off the subcommand and leave only the args
 
     // Match arguments in the signature to arguments in the command line
     for (let i = 0; i < sigSplit.length; i++) {
       if (command instanceof Line.Command) {
-        this.arguments[sigSplit[i]] = this.deno_args[i];
+        this.arguments[sigSplit[i].replace(/\[|\]/g, "")] = this.deno_args[i];
       } else {
-        this.arguments[sigSplit[i]] = this.deno_args[i + 1];
+        this.arguments[sigSplit[i].replace(/\[|\]/g, "")] =
+          this.deno_args[i + 1];
       }
     }
   }

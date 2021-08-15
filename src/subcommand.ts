@@ -5,6 +5,8 @@ import * as Line from "../mod.ts";
  * command.
  */
 export class Subcommand {
+  [key: string]: unknown
+
   /**
    * This subcommand's signature. For example, `copy [source] [destination]`.
    */
@@ -18,13 +20,14 @@ export class Subcommand {
   /**
    * This subcommand's options.
    */
-  public options: {[k: string]: string} = {};
+  public options: { [k: string]: string } = {};
+  public options_parsed: string[] = [];
 
   /**
    * An object that describes the arguments in the signature. If a subcommand
    * defines this property, then it will be used in the help menu.
    */
-  public arg_descriptions: {[k: string]: string} = {};
+  public arguments: { [k: string]: string } = {};
 
   /**
    * See Line.Cli.
@@ -53,8 +56,8 @@ export class Subcommand {
    *
    * @returns The value of the argument or undefined if no value was specified.
    */
-  public getArgumentValue(argument: string): string | undefined {
-    return this.cli.command_line.getArgumentValue(argument);
+  public arg(argument: string): string | undefined {
+    return this.cli.command_line.getArgumentValue(this, argument);
   }
 
   /**
@@ -65,38 +68,80 @@ export class Subcommand {
    * @returns True if the option exists in the command line or the value of the
    * option if one was specified.
    */
-  public getOptionValue(option: string): string|boolean|undefined {
-    return this.cli.command_line.getOptionValue(option);
+  public opt(option: string): string | boolean | undefined {
+    return this.cli.command_line.getOptionValue(this, option);
   }
 
-  /**
-   * A method to be implemented by a child class.
-   */
-  public handle(): void {
-    return;
+  public setUp(): void {
+    if (!this.handle) {
+      throw new Error(
+        `Subcommand '${this.signature.split(" ")[0]}' not implemented.`,
+      );
+      Deno.exit(1);
+    }
+
+    if (Object.keys(this.options).length > 0) {
+      for (const options in this.options) {
+        let split = options.split(",");
+        split.forEach((option) => {
+          this.options_parsed.push(option.trim());
+        });
+      }
+    }
+
+    this.cli.command_line.extractOptionsFromArguments(this);
+
+    this.cli.command_line.matchArgumentsToNames(this);
+
+    let args = this.signature.split(" ");
+    args.shift(); // Take off the subcommand and only leave the args
+
+    // Take off the surrounding square brackets from the args
+    args = args.map((arg: string) => {
+      return arg.replace(/\[|\]/g, "");
+    });
+
+    // If the arg has not been described, then make sure the the help menu can
+    // show that the arg has "(no description)"
+    args.forEach((arg: string) => {
+      if (!(arg in this.arguments)) {
+        this.arguments[arg] = "(no description)";
+      }
+    });
+
+    // Ignore all described args that are not in the signature
+    for (const arg in this.arguments) {
+      if (args.indexOf(arg) === -1) {
+        delete this.arguments[arg];
+      }
+    }
   }
 
   /**
    * Show this subcommand's help menu.
    */
   public showHelp(): string | void {
-    let help = `USAGE\n\n`;
+    const subcommand = this.signature.split(" ")[0];
+
+    let help = `USAGE (for: ${this.cli.command.signature} ${subcommand})\n\n`;
 
     help +=
       `    ${this.cli.command.signature} ${this.formatSignature()} [deno flags] [options]\n`;
 
-    if (Object.keys(this.arg_descriptions).length > 0) {
-      help += "\n";
-      help += "ARGS\n\n";
-      for (const key in this.arg_descriptions) {
-        help += `    ${key}\n`;
-        help += `        ${this.arg_descriptions[key]}\n`;
-      }
+    help += "\n";
+    help += "ARGUMENTS\n\n";
+    for (const argument in this.arguments) {
+      help += `    ${argument}\n`;
+      help += `        ${this.arguments[argument]}\n`;
     }
+    help += `\n`;
+
+    help += `OPTIONS\n\n`;
+    help += `    -h, --help\n`;
+    help += `        Show this menu.\n`;
 
     if (Object.keys(this.options).length > 0) {
-      help += "\n";
-      help += "OPTIONS\n\n";
+      help += `\n`;
       for (const key in this.options) {
         help += `    ${this.formatOptions(key)}\n`;
         help += `        ${this.options[key]}\n`;
@@ -113,15 +158,14 @@ export class Subcommand {
    */
   protected formatSignature(): string {
     const split = this.signature.split(" ");
-    split.shift();
 
     let formatted = "";
 
-    split.forEach((arg: string, index: number) => {
+    split.forEach((item: string, index: number) => {
       if (split.length == (index + 1)) {
-        formatted += `${arg.replace("[", "[arg:")}`;
+        formatted += `${item.replace("[", "[arg: ")}`;
       } else {
-        formatted += `${arg.replace("[", "[arg:")} `;
+        formatted += `${item.replace("[", "[arg: ")} `;
       }
     });
 

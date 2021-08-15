@@ -46,57 +46,28 @@ export class Cli {
    * @param options - See ICliOptions for more information.
    */
   constructor(configs: Line.Interfaces.ICliOptions) {
+    // TODO(crookse) Change `configs` to `options`
     this.name = configs.name;
     this.description = configs.description;
     this.version = configs.version;
     this.command = new (configs.command as typeof Line.Command)(this);
-
-    if (Object.keys(this.command.options).length > 0) {
-      for (const key in this.command.options) {
-        let split = key.split(",");
-        split.forEach((value) => {
-          this.command_options.push(value.trim());
-        });
-      }
-    }
-
     this.command_line = new Line.CommandLine(Deno.args, this);
-    this.validateCommand();
-    this.instantiateSubcommands();
   }
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - METHODS - PUBLIC ////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
 
-  protected validateCommand(): void {
-    if (!this.command.signature) {
-      throw new Error("The main command is missing the `signature` property.");
-    }
-
-    let commandTakesArgs = false;
-    const split = this.command.signature.split(" ");
-    split.shift();
-    if (split.length > 0) {
-      commandTakesArgs = true;
-      if (this.command.subcommands.length > 0) {
-        throw new Error("The main command cannot take in args and have subcommands.");
-      }
-    }
-
-    if (commandTakesArgs) {
-      this.command_line.matchArgumentsToNames(this.command);
-    }
-
-    if (!this.command.handle) {
-      throw new Error("The main command is missing the `handle()` method.");
-    }
-  }
-
   /**
    * Run this CLI.
    */
   public run(): void {
+    if (this.command.setUp) {
+      this.command.setUp();
+    }
+
+    this.instantiateSubcommands();
+
     const input = Deno.args[0];
 
     // If the input is an option, then process that option
@@ -112,6 +83,7 @@ export class Cli {
     // If the input matches a subcommand, then let the subcommand take over
     this.subcommands.forEach((subcommand: Line.Subcommand) => {
       if (input == subcommand.signature!.split(" ")[0]) {
+        subcommand.setUp();
 
         // No args passed to the subcommand? Show how to use the subcommand.
         if (!Deno.args[1]) {
@@ -119,8 +91,13 @@ export class Cli {
           Deno.exit(0);
         }
 
-        if (subcommand.handle) {
-          this.command_line.matchArgumentsToNames(subcommand);
+        // Show the subcommands help menu?
+        if (Deno.args[1].trim() == "-h" || Deno.args[1].trim() == "--help") {
+          subcommand.showHelp();
+          Deno.exit(0);
+        }
+
+        if (subcommand.handle && typeof subcommand.handle == "function") {
           subcommand.handle();
           Deno.exit(0);
         }
@@ -153,8 +130,8 @@ export class Cli {
       // TODO(crookse) Validate subcommand fields and methods
       this.subcommands.push(
         new (subcommand as unknown as typeof Line.Subcommand)(
-          this
-        )
+          this,
+        ),
       );
     });
   }
@@ -170,9 +147,26 @@ export class Cli {
     let help = `${this.name} - ${this.description}\n\n`;
 
     help += `USAGE\n\n`;
-    help +=
-      `    ${this.command.signature} [option | [[subcommand] [args] [deno flags] [subcommand options]]]\n`;
+    help += this.getUsage();
     help += `\n`;
+
+    if (this.command.takes_args) {
+      help += `ARGUMENTS\n\n`;
+      for (const argument in this.command.arguments) {
+        help += `    ${argument}\n`;
+        help += `        ${this.command.arguments[argument]}\n`;
+      }
+      help += `\n`;
+    }
+
+    if (this.subcommands.length > 0) {
+      help += `SUBCOMMANDS\n\n`;
+      this.subcommands.forEach((subcommand: Line.Subcommand) => {
+        help += `    ${subcommand.signature.split(" ")[0]}\n`;
+        help += `        ${subcommand.description}\n`;
+      });
+      help += `\n`;
+    }
 
     help += `OPTIONS\n\n`;
     help += `    -h, --help\n`;
@@ -181,13 +175,34 @@ export class Cli {
     help += `        Show this CLI's version.\n`;
     help += `\n`;
 
-    help += `SUBCOMMANDS\n\n`;
-    this.subcommands.forEach((subcommand: Line.Subcommand) => {
-      help += `    ${subcommand.signature.split(" ")[0]}\n`;
-      help += `        ${subcommand.description}\n`;
-    });
+    if (this.command.options_parsed.length > 0) {
+      for (const options in this.command.options) {
+        help += `    ${options}\n`;
+        help += `        ${this.command.options[options]}\n`;
+      }
+      help += `\n`;
+    }
 
     console.log(help);
+  }
+
+  protected getUsage(): string {
+    if (this.subcommands.length > 0) {
+      return `    ${this.command.signature} [option | [subcommand] [args] [deno flags] [subcommand options]]\n`;
+    }
+
+    let formatted = "";
+
+    const split = this.command.signature.split(" ");
+    split.forEach((arg: string, index: number) => {
+      if (split.length == (index + 1)) {
+        formatted += `${arg.replace("[", "[arg: ")}`;
+      } else {
+        formatted += `${arg.replace("[", "[arg: ")} `;
+      }
+    });
+
+    return `    ${formatted} [deno flags] [options]\n`;
   }
 
   /**
