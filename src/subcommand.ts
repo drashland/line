@@ -56,7 +56,7 @@ export class Subcommand {
    *
    * @returns The value of the argument or undefined if no value was specified.
    */
-  public arg(argument: string): string | undefined {
+  public argument(argument: string): string | undefined {
     return this.cli.command_line.getArgumentValue(this, argument);
   }
 
@@ -68,7 +68,7 @@ export class Subcommand {
    * @returns True if the option exists in the command line or the value of the
    * option if one was specified.
    */
-  public opt(option: string): string | boolean | undefined {
+  public option(option: string): string | boolean | undefined {
     return this.cli.command_line.getOptionValue(this, option);
   }
 

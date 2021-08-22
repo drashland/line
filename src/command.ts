@@ -32,11 +32,26 @@ export class Command implements Line.Interfaces.ICommand {
   // FILE MARKER - METHODS - PUBLIC ////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
 
-  public arg(arg: string): string | undefined {
-    return this.cli.command_line.getArgumentValue(this, arg);
+  /**
+   * Get the value of the specified argument.
+   *
+   * @param argumentName - The argument in question.
+   *
+   * @returns The value of the argument or undefined if no value was specified.
+   */
+  public argument(argument: string): string | undefined {
+    return this.cli.command_line.getArgumentValue(this, argument);
   }
 
-  public opt(option: string): boolean | string | undefined {
+  /**
+   * Get the value of the specified option.
+   *
+   * @param option - The option in question.
+   *
+   * @returns True if the option exists in the command line or the value of the
+   * option if one was specified.
+   */
+  public option(option: string): string | boolean | undefined {
     return this.cli.command_line.getOptionValue(this, option);
   }
 
