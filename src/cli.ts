@@ -83,6 +83,9 @@ export class Cli {
     // If the input matches a subcommand, then let the subcommand take over
     this.subcommands.forEach((subcommand: Line.Subcommand) => {
       if (input == subcommand.signature!.split(" ")[0]) {
+
+        
+
         subcommand.setUp();
 
         // No args passed to the subcommand? Show how to use the subcommand.
@@ -112,6 +115,9 @@ export class Cli {
     // If the input wasn't a subcommand, then let the main command take over
     if (this.command.handle) {
       this.command.handle();
+    } else {
+      // todo show error saying the subcommand wasnt recognised?
+      this.showHelp();
     }
 
     Deno.exit(0);

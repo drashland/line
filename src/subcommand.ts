@@ -77,7 +77,6 @@ export class Subcommand {
       throw new Error(
         `Subcommand '${this.signature.split(" ")[0]}' not implemented.`,
       );
-      Deno.exit(1);
     }
 
     if (Object.keys(this.options).length > 0) {
@@ -141,7 +140,6 @@ export class Subcommand {
     help += `        Show this menu.\n`;
 
     if (Object.keys(this.options).length > 0) {
-      help += `\n`;
       for (const key in this.options) {
         help += `    ${this.formatOptions(key)}\n`;
         help += `        ${this.options[key]}\n`;

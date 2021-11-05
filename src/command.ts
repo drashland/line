@@ -55,10 +55,6 @@ export class Command implements Line.Interfaces.ICommand {
     return this.cli.command_line.getOptionValue(this, option);
   }
 
-  //////////////////////////////////////////////////////////////////////////////
-  // FILE MARKER - METHODS - PROTECTED /////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////////
-
   public setUp(): void {
     if (!this.signature) {
       throw new Error("The main command is missing the `signature` property.");
