@@ -1,15 +1,21 @@
 import * as Line from "../mod.ts";
 
+export interface IOption {
+  takes_value: boolean;
+  value?: boolean | string;
+}
+
 export interface ICommand {
   signature: string;
   subcommands: typeof Line.Subcommand[];
   arguments: { [k: string]: string };
-  options: { [k: string]: string };
+  options: Line.Types.TOption;
   options_parsed: string[];
   takes_args: boolean;
   cli: Line.Cli;
   handle?: () => void;
   setUp?: () => void;
+  getOption?: (optionName: string) => IOption;
 }
 
 /**

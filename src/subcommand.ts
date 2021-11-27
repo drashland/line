@@ -20,8 +20,7 @@ export class Subcommand {
   /**
    * This subcommand's options.
    */
-  public options: { [k: string]: string } = {};
-  public options_parsed: string[] = [];
+  public options: Line.Types.TOption = {};
 
   /**
    * An object that describes the arguments in the signature. If a subcommand
@@ -33,6 +32,12 @@ export class Subcommand {
    * See Line.Cli.
    */
   public cli: Line.Cli;
+
+  /**
+   * Used internally during runtime for performance and getting/checking of
+   * options.
+   */
+  #options_map: Map<string, Line.Interfaces.IOption> = new Map();
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
@@ -60,6 +65,10 @@ export class Subcommand {
     return this.cli.command_line.getArgumentValue(this, argument);
   }
 
+  public hasOption(option: string): boolean {
+    return this.#options_map.has(option);
+  }
+
   /**
    * Get the value of the specified option.
    *
@@ -72,26 +81,86 @@ export class Subcommand {
     return this.cli.command_line.getOptionValue(this, option);
   }
 
-  public setUp(): void {
+  public getOption(optionName: string): Line.Interfaces.IOption {
+    // We add the ! to the end because
+    // `CommandLine.extractOptionsFromArguments()` will exit if any option is
+    // passed into the command line that does not exist. This being said, when
+    // `CommandLine.extractOptionsFromArguments()` calls this method, the option
+    // WILL exist.
+    return this.#options_map.get(optionName)!;
+  }
+
+  /**
+   * Get the subcommand form the signature, which is the first item in the
+   * signature.
+   *
+   * @returns The subcommand.
+   */
+  public getSubcommand(): string {
+    return this.signature.split(" ")[0];
+  }
+
+  /**
+   * Create the options Map so that it can be used during runtime. We do not use
+   * `this.options` directly because it is just the interface that users use to
+   * define their options. The Map created in this method creates an object that
+   * we can parse better during runtime.
+   */
+  #createOptionsMap(): void {
+    for (const optionSignatures in this.options) {
+      const split = optionSignatures.split(",");
+      split.forEach((signature: string) => {
+        // Trim any leading or trailing spaces that might be in the signature
+        signature = signature.trim();
+
+        // Check to see if this option takes in a value
+        let optionTakesValue = false;
+        if (signature.includes("[value]")) {
+          signature = signature.replace(/\s+\[value\]/, "");
+          optionTakesValue = true;
+        }
+
+        this.#options_map.set(signature.trim(), {
+          takes_value: optionTakesValue,
+          // The value starts off as `undefined` because we do not know what the
+          // value of the option is yet. We find out what the value is when
+          // `CommandLine.extractOptionsFromArguments()` is called.
+          value: undefined,
+        });
+      });
+    }
+  }
+
+  /**
+   * Validate this subcommand. Exit if there are any errors.
+   */
+  #validate(): void {
     if (!this.handle) {
-      throw new Error(
-        `Subcommand '${this.signature.split(" ")[0]}' not implemented.`,
-      );
+      console.log(`Subcommand '${this.getSubcommand()}' does not have a \`handle()\` method implemented.`);
+      Deno.exit(1);
     }
 
-    if (Object.keys(this.options).length > 0) {
-      for (const options in this.options) {
-        let split = options.split(",");
-        split.forEach((option) => {
-          this.options_parsed.push(option.trim());
-        });
-      }
-    }
+    // TODO(crookse): Check that the options' signatures are valid
+    // TODO(crookse): Check that the arguments have descriptions
+  }
+
+  /**
+   * Set up this subcommand so it can handle any options and arguments passed in
+   * through the command line..
+   */
+  public setUp(): void {
+    this.#validate();
+
+    this.#createOptionsMap();
+
+    this.#createArgumentsMap();
 
     this.cli.command_line.extractOptionsFromArguments(this);
 
     this.cli.command_line.matchArgumentsToNames(this);
+  }
 
+  #createArgumentsMap(): void {
     let args = this.signature.split(" ");
     args.shift(); // Take off the subcommand and only leave the args
 
@@ -122,10 +191,9 @@ export class Subcommand {
   public showHelp(): string | void {
     const subcommand = this.signature.split(" ")[0];
 
-    let help = `USAGE (for: ${this.cli.command.signature} ${subcommand})\n\n`;
+    let help = `USAGE (for: \`${this.cli.main_command.signature} ${subcommand}\`)\n\n`;
 
-    help +=
-      `    ${this.cli.command.signature} ${this.formatSignature()} [deno flags] [options]\n`;
+    help += this.getUsage();
 
     help += "\n";
     help += "ARGUMENTS\n\n";
@@ -154,20 +222,30 @@ export class Subcommand {
    *
    * @returns The formatted signature.
    */
-  protected formatSignature(): string {
-    const split = this.signature.split(" ");
+  protected getUsage(): string {
+    const mainCommand = this.cli.main_command.signature;
 
-    let formatted = "";
+    const split = this.signature.split(" ");
+    const subcommand = split[0];
+
+    let formatted = `    ${mainCommand} ${subcommand} [option]
+    ${mainCommand} ${subcommand} [options] `;
+
+    // Take off the subcommand so that we do not parse it when we start
+    // formatting the signature in the `.forEach()` below
+    split.shift();
 
     split.forEach((item: string, index: number) => {
       if (split.length == (index + 1)) {
         formatted += `${item.replace("[", "[arg: ")}`;
       } else {
+        // If this is not the last argument, then add a trailing space so that
+        // the next argument is not hugging up against this one
         formatted += `${item.replace("[", "[arg: ")} `;
       }
     });
 
-    return formatted;
+    return formatted + "\n";
   }
 
   /**

@@ -5,21 +5,14 @@ import * as Line from "../mod.ts";
  */
 export class Cli {
   /**
-   * See Line.command.
+   * See Line.Command.
    */
-  public command: Line.Interfaces.ICommand;
-
-  /**
-   * All of the subcommands from the command, but instantiated.
-   */
-  public subcommands: Line.Subcommand[] = [];
+  public main_command: Line.Interfaces.ICommand;
 
   /**
    * See Line.CommandLine.
    */
   public command_line: Line.CommandLine;
-
-  public command_options: string[] = [];
 
   /**
    * This CLI's description.
@@ -30,6 +23,11 @@ export class Cli {
    * This CLI's name.
    */
   public name: string;
+
+  /**
+   * All of the subcommands from the command, but instantiated.
+   */
+  public subcommands: Line.Subcommand[] = [];
 
   /**
    * This CLI's version.
@@ -45,12 +43,11 @@ export class Cli {
    *
    * @param options - See ICliOptions for more information.
    */
-  constructor(configs: Line.Interfaces.ICliOptions) {
-    // TODO(crookse) Change `configs` to `options`
-    this.name = configs.name;
-    this.description = configs.description;
-    this.version = configs.version;
-    this.command = new (configs.command as typeof Line.Command)(this);
+  constructor(options: Line.Interfaces.ICliOptions) {
+    this.name = options.name;
+    this.description = options.description;
+    this.version = options.version;
+    this.main_command = new (options.command as typeof Line.Command)(this);
     this.command_line = new Line.CommandLine(this, Deno.args);
   }
 
@@ -61,12 +58,12 @@ export class Cli {
   /**
    * Run this CLI.
    */
-  public run(): void {
-    if (this.command.setUp) {
-      this.command.setUp();
-    }
-
+  public async run(): Promise<void> {
     this.instantiateSubcommands();
+
+    if (this.main_command.setUp) {
+      this.main_command.setUp();
+    }
 
     const input = Deno.args[0];
 
@@ -83,8 +80,6 @@ export class Cli {
     // If the input matches a subcommand, then let the subcommand take over
     this.subcommands.forEach((subcommand: Line.Subcommand) => {
       if (input == subcommand.signature!.split(" ")[0]) {
-
-        
 
         subcommand.setUp();
 
@@ -107,14 +102,9 @@ export class Cli {
       }
     });
 
-    if (!input) {
-      this.showHelp();
-      Deno.exit(0);
-    }
-
     // If the input wasn't a subcommand, then let the main command take over
-    if (this.command.handle) {
-      this.command.handle();
+    if (this.main_command.handle) {
+      await this.main_command.handle();
     } else {
       // todo show error saying the subcommand wasnt recognised?
       this.showHelp();
@@ -123,16 +113,19 @@ export class Cli {
     Deno.exit(0);
   }
 
+  /**
+   * Instantiate all subcommands so that they can be run.
+   */
   public instantiateSubcommands(): void {
-    if (!this.command.subcommands) {
+    if (!this.main_command.subcommands) {
       return;
     }
 
-    if (this.command.subcommands.length <= 0) {
+    if (this.main_command.subcommands.length <= 0) {
       return;
     }
 
-    this.command.subcommands.forEach((subcommand: typeof Line.Subcommand) => {
+    this.main_command.subcommands.forEach((subcommand: typeof Line.Subcommand) => {
       // TODO(crookse) Validate subcommand fields and methods
       this.subcommands.push(
         new (subcommand as unknown as typeof Line.Subcommand)(
@@ -149,18 +142,18 @@ export class Cli {
   /**
    * Show this CLI's help menu.
    */
-  protected showHelp(): void {
+  public showHelp(): void {
     let help = `${this.name} - ${this.description}\n\n`;
 
     help += `USAGE\n\n`;
     help += this.getUsage();
     help += `\n`;
 
-    if (this.command.takes_args) {
+    if (this.main_command.takes_args) {
       help += `ARGUMENTS\n\n`;
-      for (const argument in this.command.arguments) {
+      for (const argument in this.main_command.arguments) {
         help += `    ${argument}\n`;
-        help += `        ${this.command.arguments[argument]}\n`;
+        help += `        ${this.main_command.arguments[argument]}\n`;
       }
       help += `\n`;
     }
@@ -181,10 +174,10 @@ export class Cli {
     help += `        Show this CLI's version.\n`;
     help += `\n`;
 
-    if (this.command.options_parsed.length > 0) {
-      for (const options in this.command.options) {
+    if (this.main_command.options_parsed.length > 0) {
+      for (const options in this.main_command.options) {
         help += `    ${options}\n`;
-        help += `        ${this.command.options[options]}\n`;
+        help += `        ${this.main_command.options[options]}\n`;
       }
       help += `\n`;
     }
@@ -192,14 +185,20 @@ export class Cli {
     console.log(help);
   }
 
+  /**
+   * Get the "Usage" section of the menu.
+   *
+   * @returns The usage section.
+   */
   protected getUsage(): string {
     if (this.subcommands.length > 0) {
-      return `    ${this.command.signature} [option | [subcommand] [args] [deno flags] [subcommand options]]\n`;
+      return `    ${this.main_command.signature} [option]
+    ${this.main_command.signature} [subcommand] [subcommand options] [args]\n`;
     }
 
     let formatted = "";
 
-    const split = this.command.signature.split(" ");
+    const split = this.main_command.signature.split(" ");
     split.forEach((arg: string, index: number) => {
       if (split.length == (index + 1)) {
         formatted += `${arg.replace("[", "[arg: ")}`;
@@ -208,7 +207,7 @@ export class Cli {
       }
     });
 
-    return `    ${formatted} [deno flags] [options]\n`;
+    return `    ${formatted} [options]\n`;
   }
 
   /**

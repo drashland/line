@@ -5,12 +5,17 @@ import * as Line from "../mod.ts";
  */
 export class Command implements Line.Interfaces.ICommand {
   /**
-   * The command that is used on the command line.
+   * The main command that is used on the command line. For example, in the
+   * following command line ...
+   *
+   *   `deno run -A app.ts`
+   *
+   * ... the `deno` part is the main command.
    */
   public signature!: string;
 
   /**
-   * An array of subcommands that this command can execute.
+   * An array of subcommands that this main command can execute.
    */
   public subcommands: typeof Line.Subcommand[] = [];
 
@@ -18,7 +23,7 @@ export class Command implements Line.Interfaces.ICommand {
 
   public arguments: { [k: string]: string } = {};
 
-  public options: { [k: string]: string } = {};
+  public options: Line.Types.TOption = {};
 
   public options_parsed: string[] = [];
 
@@ -55,6 +60,9 @@ export class Command implements Line.Interfaces.ICommand {
     return this.cli.command_line.getOptionValue(this, option);
   }
 
+  /**
+   * Set up this main comman.
+   */
   public setUp(): void {
     if (!this.signature) {
       throw new Error("The main command is missing the `signature` property.");
@@ -74,14 +82,14 @@ export class Command implements Line.Interfaces.ICommand {
     }
 
     // Create the list of options that this main command takes
-    if (Object.keys(this.options).length > 0) {
-      for (const options in this.options) {
-        let split = options.split(",");
-        split.forEach((option) => {
-          this.options_parsed.push(option.trim());
-        });
-      }
-    }
+    // if (Object.keys(this.options).length > 0) {
+    //   for (const options in this.options) {
+    //     let split = options.split(",");
+    //     split.forEach((option) => {
+    //       this.options_parsed.push(option.trim());
+    //     });
+    //   }
+    // }
 
     this.cli.command_line.extractOptionsFromArguments(this);
 

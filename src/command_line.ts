@@ -61,45 +61,38 @@ export class CommandLine {
   public extractOptionsFromArguments(
     command: Line.Command | Line.Subcommand,
   ): void {
-    this.deno_args.forEach((datum: string) => {
-      if (datum.match(/^-/)) {
-        this.options[datum] = true; // Default value is true
+    this.deno_args.forEach((arg: string) => {
+      if (arg.match(/^-/)) {
+        if ("hasOption" in command) {
+          if (!command.hasOption(arg)) {
+            console.log(`Unknown '${arg}' option found.`);
+            Deno.exit(1);
+          }
+          this.options[arg] = true; // Default value is true
+        }
       }
     });
 
     for (const optionName in this.options) {
-      // Get the location of the option in the line
+
+      // Get the location of the option in the line so we can check if the next
+      // item in the command line is the value to the option (if the option
+      // takes in a value)
       const index = this.deno_args.indexOf(optionName);
 
-      // The input AFTER the location of the option is the value of the option
-      // UNLESS it is also another option. If the input after the location of
-      // the option is another option, then all we do is say, "Yes, the option
-      // exists in the command line," and we just assign it a `true` value.
-      let value: string | boolean = this.deno_args[index + 1];
+      if ("getOption" in command) {
+        const option = command.getOption(optionName);
 
-      const isOption = command.options_parsed.indexOf(value) != -1 ||
-        (value in this.options);
-
-      if (isOption) {
-        value = true;
+        // If the option takes in a value, then the item AFTER the option in the
+        // command line is the option's value ...
+        if (option.takes_value) {
+          this.options[optionName] = this.deno_args[index + 1];
+        } else {
+          // ... otherwise, it is just `true` because we are saying, "Yes, this
+          // option has been passed in"
+          this.options[optionName] = true;
+        }
       }
-
-      // If the option is last in the deno args and has no value, then we do not
-      // want its value to be `undefined`. We want its value to be `true`
-      // because it exists in the command line.
-      if (this.deno_args.length <= (index + 1)) {
-        value = true;
-      }
-
-      if (value == "true") {
-        value = true;
-      }
-
-      if (value == "false") {
-        value = false;
-      }
-
-      this.options[optionName] = value;
     }
   }
 
@@ -117,18 +110,7 @@ export class CommandLine {
     command: Line.Command | Line.Subcommand,
     argumentName: string,
   ): undefined | string {
-    let value = this.arguments[argumentName];
-
-    if (!value) {
-      return undefined;
-    }
-
-    // If the value is NOT an option on the subcommand, then we return the value
-    if (command.options_parsed.indexOf(value) == -1) {
-      return value;
-    }
-
-    return undefined;
+    return this.arguments[argumentName] ?? undefined;
   }
 
   /**
@@ -152,15 +134,11 @@ export class CommandLine {
     const longName = `--${opt}`;
 
     if (shortName in this.options) {
-      if (command.options_parsed.indexOf(shortName) != -1) {
-        return this.options[shortName];
-      }
+      return this.options[shortName];
     }
 
     if (longName in this.options) {
-      if (command.options_parsed.indexOf(longName) != -1) {
-        return this.options[longName];
-      }
+      return this.options[longName];
     }
 
     return undefined;
