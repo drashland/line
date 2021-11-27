@@ -55,45 +55,9 @@ export class CommandLine {
   // FILE MARKER - METHODS - PUBLIC ////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
 
-  /**
-   * Extract all options and their values from Deno.args.
-   */
-  public extractOptionsFromArguments(
-    command: Line.Command | Line.Subcommand,
-  ): void {
-    this.deno_args.forEach((arg: string) => {
-      if (arg.match(/^-/)) {
-        if ("hasOption" in command) {
-          if (!command.hasOption(arg)) {
-            console.log(`Unknown '${arg}' option found.`);
-            Deno.exit(1);
-          }
-          this.options[arg] = true; // Default value is true
-        }
-      }
-    });
 
-    for (const optionName in this.options) {
-
-      // Get the location of the option in the line so we can check if the next
-      // item in the command line is the value to the option (if the option
-      // takes in a value)
-      const index = this.deno_args.indexOf(optionName);
-
-      if ("getOption" in command) {
-        const option = command.getOption(optionName);
-
-        // If the option takes in a value, then the item AFTER the option in the
-        // command line is the option's value ...
-        if (option.takes_value) {
-          this.options[optionName] = this.deno_args[index + 1];
-        } else {
-          // ... otherwise, it is just `true` because we are saying, "Yes, this
-          // option has been passed in"
-          this.options[optionName] = true;
-        }
-      }
-    }
+  public getDenoArgs(): string[] {
+    return this.deno_args;
   }
 
   /**

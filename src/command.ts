@@ -91,7 +91,7 @@ export class Command implements Line.Interfaces.ICommand {
     //   }
     // }
 
-    this.cli.command_line.extractOptionsFromArguments(this);
+    // this.cli.command_line.extractOptionsFromArguments(this);
 
     if (this.takes_args) {
       this.cli.command_line.matchArgumentsToNames(this);
