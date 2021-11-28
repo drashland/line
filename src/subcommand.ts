@@ -1,6 +1,8 @@
 import * as Line from "../mod.ts";
 import * as argParser from "./arg_parser.ts";
-import { IArgument } from "./interfaces.ts";
+import { IArgument, IOption } from "./interfaces.ts";
+import { TArgument, TOption } from "./types.ts";
+import { colors } from "../deps.ts";
 
 /**
  * This class represents a subcommand. It can only be executed by the main
@@ -20,13 +22,12 @@ export abstract class Subcommand {
   /**
    * This subcommand's options.
    */
-  public options: Line.Types.TOption = {};
+  public options: TOption = {};
 
   /**
-   * An object that describes the arguments in the signature. If a subcommand
-   * defines this property, then it will be used in the help menu.
+   * This subcommand's argument descriptions.
    */
-  public arguments: { [k: string]: string } = {};
+  public arguments: TArgument = {};
 
   /**
    * See Line.Cli.
@@ -35,11 +36,15 @@ export abstract class Subcommand {
 
   /**
    * Used internally during runtime for performance and getting/checking of
+   * arguments.
+   */
+  #arguments_map: Map<string, IArgument> = new Map();
+
+  /**
+   * Used internally during runtime for performance and getting/checking of
    * options.
    */
-  #options_map: Map<string, Line.Interfaces.IOption> = new Map();
-
-  #arguments_map: Map<string, IArgument> = new Map();
+  #options_map: Map<string, IOption> = new Map();
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
@@ -67,22 +72,29 @@ export abstract class Subcommand {
    *
    * @param argumentName - The argument in question.
    *
-   * @returns The value of the argument or undefined if no value was specified.
+   * @returns The value of the argument in the command line or undefined if the
+   * argument does not exist.
    */
-  public argument(argument: string): string | undefined {
-    return this.cli.command_line.getArgumentValue(this, argument);
+  public argument(argumentName: string): string | undefined {
+    const argumentObject = this.#arguments_map.get(argumentName);
+
+    if (argumentObject) {
+      return argumentObject.value;
+    }
+
+    return undefined;
   }
 
   /**
    * Get the value of the specified option.
    *
-   * @param option - The option in question.
+   * @param optionName - The option in question.
    *
-   * @returns True if the option exists in the command line or the value of the
-   * option if one was specified.
+   * @returns The value of the option in the command line or undefined if the
+   * option does not exist.
    */
-  public option(option: string): string | boolean | undefined {
-    const optionObject = this.#options_map.get(option);
+  public option(optionName: string): string | boolean | undefined {
+    const optionObject = this.#options_map.get(optionName);
 
     if (optionObject) {
       return optionObject.value;
@@ -95,36 +107,64 @@ export abstract class Subcommand {
    * Run this subcommand.
    */
   public run(): void {
-    argParser.parseOptionsInCommandLine(
-      this.cli.command_line.getDenoArgs(),
+    let denoArgs = Deno.args.slice(); // Make a copy that we  can mutate
+
+    // Remove the subcommand from the command line. We only care about the items
+    // that come after the subcommand.
+    const commandIndex = denoArgs.indexOf(this.#getSubcommandName());
+    denoArgs = denoArgs.slice(commandIndex + 1, denoArgs.length);
+
+    const optionsParsingErrors = argParser.parseOptionsInCommandLine(
+      denoArgs,
       this.#getSubcommandName(),
       "subcommand",
       this.#options_map,
       this.showHelp,
     );
 
-    argParser.setOptionsMapActualValues(
-      this.cli.command_line.getDenoArgs(),
+    const optionsErrors = argParser.extractOptionsFromDenoArgs(
+      denoArgs,
       this.#getSubcommandName(),
       "subcommand",
       this.#options_map,
     );
 
-    argParser.matchArgumentsToNames(
-      this.cli.command_line.getDenoArgs(),
+    const argsErrors = argParser.matchArgumentsToNames(
+      denoArgs,
       this.#getSubcommandName(),
       "subcommand",
       this.signature,
       this.#arguments_map,
     );
 
+    let errors = optionsErrors.concat(argsErrors)
+    errors = errors.concat(optionsParsingErrors);
+
+    if (errors.length > 0) {
+      let errorString = "";
+      errors.forEach((error: string) => {
+        errorString += `\n  * ${error}`;
+      });
+      console.log(colors.red(`[ERROR] `) + `Subcommand '${this.#getSubcommandName()}' used incorrectly. Errors found:\n${errorString}`);
+      Deno.exit(1);
+    }
+
     this.handle();
 
     Deno.exit(0);
   }
 
+  /**
+   * Set up this subcommand so it can be used during runtime.
+   */
   public setUp(): void {
-    this.#createArgumentsMap();
+    argParser.setArgumentsMapInitialValues(
+      this.signature,
+      this.#getSubcommandName(),
+      "subcommand",
+      this.arguments,
+      this.#arguments_map,
+    );
 
     argParser.setOptionsMapInitialValues(
       this.options,
@@ -168,39 +208,6 @@ export abstract class Subcommand {
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - PRIVATE METHODS /////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * Create the arguments Map so that it can be used during runtime. We do not
-   * use `this.arguments` directly because it is just the interface that users
-   * use to define their argument descriptions. The Map created in this method
-   * creates an object that we can parse better during runtime.
-   */
-  #createArgumentsMap(): void {
-    let args = this.signature.split(" ");
-    args.shift(); // Take off the subcommand and only leave the args
-
-    // Take off the surrounding square brackets from the args
-    args = args.map((arg: string) => {
-      return arg.replace(/\[|\]/g, "");
-    });
-
-    // If the arg has not been described, then make sure the the help menu can
-    // show that the arg has "(no description)"
-    args.forEach((arg: string) => {
-      if (!(arg in this.arguments)) {
-        this.#arguments_map.set(arg, {
-          description: "(no description)",
-        });
-      }
-    });
-
-    // Ignore all described args that are not in the signature
-    for (const arg in this.arguments) {
-      if (args.indexOf(arg) === -1) {
-        delete this.arguments[arg];
-      }
-    }
-  }
 
   /**
    * Get the subcommand form the signature, which is the first item in the

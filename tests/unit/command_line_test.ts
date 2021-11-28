@@ -13,7 +13,7 @@ Rhum.testPlan("command_line_test.ts", () => {
 
       const c = new Line.CommandLine(
         cli,
-        ["--print=true"]
+        ["--print=true"],
       );
       Rhum.asserts.assertEquals(c.deno_args, ["--print", "true"]);
     });
@@ -24,7 +24,7 @@ Rhum.testPlan("command_line_test.ts", () => {
       const cli = getCli(Command1);
       const c = new Line.CommandLine(
         cli,
-        ["--print=true", "--some-option", "some-option-value", "-t"]
+        ["--print=true", "--some-option", "some-option-value", "-t"],
       );
 
       c.extractOptionsFromArguments(new Command1(cli));
@@ -35,7 +35,7 @@ Rhum.testPlan("command_line_test.ts", () => {
           "--print": true,
           "--some-option": "some-option-value",
           "-t": true,
-        }
+        },
       );
     });
   });
@@ -45,7 +45,7 @@ Rhum.testPlan("command_line_test.ts", () => {
       const cli = getCli(Command1);
       const c = new Line.CommandLine(
         cli,
-        ["some-source"]
+        ["some-source"],
       );
 
       const command = new Command1(cli);
@@ -54,7 +54,7 @@ Rhum.testPlan("command_line_test.ts", () => {
 
       Rhum.asserts.assertEquals(
         c.getArgumentValue(command, "source"),
-        "some-source"
+        "some-source",
       );
     });
   });
@@ -67,7 +67,7 @@ Rhum.testPlan("command_line_test.ts", () => {
       const cli = getCli(Command1);
       const c = new Line.CommandLine(
         cli,
-        ["-p"]
+        ["-p"],
       );
 
       const command = new Command1(cli);
@@ -85,7 +85,7 @@ Rhum.testPlan("command_line_test.ts", () => {
       const cli = getCli(Command1);
       const c = new Line.CommandLine(
         cli,
-        ["-p=test", "--long", "w00t"]
+        ["-p=test", "--long", "w00t"],
       );
 
       const command = new Command1(cli);
@@ -108,7 +108,7 @@ Rhum.testPlan("command_line_test.ts", () => {
       const cli = getCli(Command1);
       const c = new Line.CommandLine(
         cli,
-        ["-d=test", "--nope", "w00t"]
+        ["-d=test", "--nope", "w00t"],
       );
 
       const command = new Command1(cli);
@@ -133,7 +133,7 @@ Rhum.testPlan("command_line_test.ts", () => {
       const cli = getCli(Command1);
       const c = new Line.CommandLine(
         cli,
-        ["some-source", "some-destination"]
+        ["some-source", "some-destination"],
       );
 
       c.matchArgumentsToNames(new Command1(cli));
@@ -143,7 +143,7 @@ Rhum.testPlan("command_line_test.ts", () => {
         {
           "source": "some-source",
           "destination": "some-destination",
-        }
+        },
       );
     });
   });

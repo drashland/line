@@ -1,5 +1,38 @@
 import { IArgument, IOption } from "./interfaces.ts";
-import { TOption } from "./types.ts";
+import { TArgument, TOption } from "./types.ts";
+
+/**
+ * Create the arguments Map so that it can be used during runtime. We do not
+ * use `this.arguments` directly because it is just the interface that users
+ * use to define their argument descriptions. The Map created in this method
+ * creates an object that we can parse better during runtime.
+ */
+export function setArgumentsMapInitialValues(
+  commandSignature: string,
+  commandName: string,
+  commandType: "command" | "subcommand",
+  argDescriptions: TArgument,
+  argMap: Map<string, IArgument>,
+): void {
+  // Remove the command from the signature. We only care about its arguments.
+  commandSignature = commandSignature.replace(commandName, "").trim();
+
+  const argsArray = commandSignature.split(" ").map((arg: string) => {
+    return arg.replace(/\[|\]/g, ""); // Take off square brackets
+  });
+
+  argsArray.forEach((arg: string) => {
+    // Set the description (if one exists)
+    let description = "(no description)";
+    if (arg in argDescriptions) {
+      description = argDescriptions[arg];
+    }
+
+    argMap.set(arg.trim(), {
+      description: description,
+    });
+  });
+}
 
 /**
  * Match all of the commands's argument names to their respective arguments
@@ -13,39 +46,49 @@ export function matchArgumentsToNames(
   commandName: string,
   commandType: "command" | "subcommand",
   commandSignature: string,
-  argumentsMap: Map<string, IArgument>,
-): void {
+  argsMap: Map<string, IArgument>,
+): string[] {
+  const errors: string[] = [];
+
   // Remove the command from the signature. We only care about its arguments.
   commandSignature = commandSignature.replace(commandName, "").trim();
+
+  const argsArray = commandSignature.split(" ").map((arg: string) => {
+    return arg.replace(/\[|\]/g, ""); // Take off square brackets
+  });
 
   // Remove the command from the command line. We only care about the arguments
   // passed in.
   const commandIndex = denoArgs.indexOf(commandName);
   denoArgs = denoArgs.slice(commandIndex + 1, denoArgs.length);
 
-  // // Match arguments in the signature to arguments in the command line
-  for (let i = 0; i < commandSignature.length; i++) {
-    const argumentObj = argumentsMap.get(commandSignature[i].replace(/\[|\]/g, ""));
-    if (argumentObj) {
-      argumentObj.value = denoArgs[i];
+  // Match the items in the command line to arguments in the command
+  let index = 0;
+  for (const [argName, argObject] of argsMap.entries()) {
+    const argValue = denoArgs[index];
+    if (!argValue) {
+      errors.push(`Argument '${argName}' is missing.`);
     }
+    argObject.value = argValue;
+    index++;
   }
+
+  return errors;
 }
 
+
 /**
- * Take the validated command line and set actual values in the options Map.
+ * Take the command line and set actual values in the options Map. After setting
+ * the options, take them out of the command line so it can be checked for
+ * arguments.
  */
-export function setOptionsMapActualValues(
+export function extractOptionsFromDenoArgs(
   denoArgs: string[],
   commandName: string,
   commandType: "command" | "subcommand",
   optionsMap: Map<string, IOption>,
-): void {
-  // Remove the subcommand from the command line. We only care about the items
-  // that come after the subcommand.
-  const commandIndex = denoArgs.indexOf(commandName);
-  denoArgs = denoArgs.slice(commandIndex + 1, denoArgs.length);
-
+): string[] {
+  const errors = [];
 
   for (const [option, optionObject] of optionsMap.entries()) {
     const optionLocation = denoArgs.indexOf(option);
@@ -55,11 +98,26 @@ export function setOptionsMapActualValues(
       continue;
     }
 
+    const nextValue = denoArgs[optionLocation + 1];
+
     // If we get here, then the option is present in the command line.
     // Therefore, we check to see if it takes in a value. If it does, then the
     // next item in the command line is the option's value.
     if (optionObject.takes_value) {
-      optionObject.value = denoArgs[optionLocation + 1];
+      optionObject.value = nextValue;
+      denoArgs.splice(optionLocation, 2);
+      continue;
+    }
+
+    // If we get here, then we need to check if the next item in the command
+    // line is an option. If it is not, then:
+    //
+    //   1. It is a value
+    //   2. The option that we are currently checking does not take a value
+    //   3. We throw an error
+    if (!optionsMap.has(nextValue)) {
+      errors.push(`Option '${option}' does not take in a value. \`${option} ${nextValue}\` was given.`);
+      denoArgs.splice(optionLocation, 2);
       continue;
     }
 
@@ -73,7 +131,10 @@ export function setOptionsMapActualValues(
     // it does, then they can handle it accordingly in their `handle()`
     // methods.
     optionObject.value = true;
+    denoArgs.splice(optionLocation, 1);
   }
+
+  return errors;
 }
 
 /**
@@ -106,9 +167,6 @@ export function setOptionsMapInitialValues(
 
       optionsMap.set(signature, {
         takes_value: optionTakesValue,
-        // The value starts off as `undefined` because we do not know what the
-        // value of the option is yet. We find out later in this method.
-        value: undefined,
       });
     });
   }
@@ -131,18 +189,17 @@ export function parseOptionsInCommandLine(
   commandType: "command" | "subcommand",
   optionsMap: Map<string, IOption>,
   helpMenu: () => void,
-): void {
-  // Remove the subcommand from the command line. We only care about the items
-  // that come after the subcommand.
-  const commandIndex = denoArgs.indexOf(commandName);
-  denoArgs = denoArgs.slice(commandIndex + 1, denoArgs.length);
+): string[] {
+  const errors: string[] = [];
 
-  denoArgs.forEach((arg: string) => {
+  denoArgs.forEach((arg: string, index: number) => {
     if (arg.match(/^-/)) {
       if (!optionsMap.has(arg)) {
-        console.log(`Unknown '${arg}' option found for '${commandName}' ${commandType}.`);
-        Deno.exit(1);
+        errors.push(`Unknown '${arg}' option was given.`);
+        denoArgs.splice(index, 1);
       }
     }
   });
+
+  return errors;
 }

@@ -4,7 +4,7 @@ interface IOptionOptions {
 }
 
 export class Option {
-  #options: IOptionOptions
+  #options: IOptionOptions;
 
   #allowed_flags: string[] = [];
 

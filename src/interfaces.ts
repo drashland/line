@@ -1,7 +1,7 @@
 import * as Line from "../mod.ts";
 
 export interface IConstructable<T> {
-  new(...args: unknown[]): T;
+  new (...args: unknown[]): T;
 }
 
 export interface IArgument {
