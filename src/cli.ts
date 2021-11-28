@@ -81,7 +81,6 @@ export class Cli {
     // If the input matches a subcommand, then let the subcommand take over
     this.#subcommands.forEach((subcommand: Subcommand) => {
       if (input == subcommand.signature!.split(" ")[0]) {
-
         const denoArgs = Deno.args.slice();
 
         // No args passed to the subcommand? Show how to use the subcommand.
@@ -92,8 +91,8 @@ export class Cli {
 
         // Show the subcommands help menu?
         if (
-          denoArgs.indexOf("-h") !== -1
-          || denoArgs.indexOf("--help") !== -1
+          denoArgs.indexOf("-h") !== -1 ||
+          denoArgs.indexOf("--help") !== -1
         ) {
           subcommand.showHelp();
           Deno.exit(0);
@@ -127,7 +126,8 @@ export class Cli {
     }
 
     this.main_command.subcommands.forEach((subcommand: typeof Subcommand) => {
-      const subcommandObj = new (subcommand as unknown as IConstructable<Subcommand>)(this)
+      const subcommandObj =
+        new (subcommand as unknown as IConstructable<Subcommand>)(this);
       subcommandObj.setUp();
       this.#subcommands.push(subcommandObj);
     });

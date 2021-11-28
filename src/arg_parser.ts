@@ -1,5 +1,36 @@
-import { IOption } from "./interfaces.ts";
+import { IArgument, IOption } from "./interfaces.ts";
 import { TOption } from "./types.ts";
+
+/**
+ * Match all of the commands's argument names to their respective arguments
+ * based on location of the argument in the command line.
+ *
+ * @param command - The command in question that should have the command line
+ * arguments matched to its signature.
+ */
+export function matchArgumentsToNames(
+  denoArgs: string[],
+  commandName: string,
+  commandType: "command" | "subcommand",
+  commandSignature: string,
+  argumentsMap: Map<string, IArgument>,
+): void {
+  // Remove the command from the signature. We only care about its arguments.
+  commandSignature = commandSignature.replace(commandName, "").trim();
+
+  // Remove the command from the command line. We only care about the arguments
+  // passed in.
+  const commandIndex = denoArgs.indexOf(commandName);
+  denoArgs = denoArgs.slice(commandIndex + 1, denoArgs.length);
+
+  // // Match arguments in the signature to arguments in the command line
+  for (let i = 0; i < commandSignature.length; i++) {
+    const argumentObj = argumentsMap.get(commandSignature[i].replace(/\[|\]/g, ""));
+    if (argumentObj) {
+      argumentObj.value = denoArgs[i];
+    }
+  }
+}
 
 /**
  * Take the validated command line and set actual values in the options Map.

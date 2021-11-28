@@ -1,12 +1,12 @@
 import * as Line from "../mod.ts";
 import * as argParser from "./arg_parser.ts";
+import { IArgument } from "./interfaces.ts";
 
 /**
  * This class represents a subcommand. It can only be executed by the main
  * command.
  */
 export abstract class Subcommand {
-
   /**
    * This subcommand's signature. For example, `copy [source] [destination]`.
    */
@@ -38,6 +38,8 @@ export abstract class Subcommand {
    * options.
    */
   #options_map: Map<string, Line.Interfaces.IOption> = new Map();
+
+  #arguments_map: Map<string, IArgument> = new Map();
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
@@ -108,7 +110,13 @@ export abstract class Subcommand {
       this.#options_map,
     );
 
-    this.cli.command_line.matchArgumentsToNames(this);
+    argParser.matchArgumentsToNames(
+      this.cli.command_line.getDenoArgs(),
+      this.#getSubcommandName(),
+      "subcommand",
+      this.signature,
+      this.#arguments_map,
+    );
 
     this.handle();
 
@@ -130,15 +138,16 @@ export abstract class Subcommand {
   public showHelp(): void {
     const subcommand = this.#getSubcommandName();
 
-    let help = `USAGE (for: \`${this.cli.main_command.signature} ${subcommand}\`)\n\n`;
+    let help =
+      `USAGE (for: \`${this.cli.main_command.signature} ${subcommand}\`)\n\n`;
 
     help += this.#getUsage();
 
     help += "\n";
     help += "ARGUMENTS\n\n";
-    for (const argument in this.arguments) {
+    for (const [argument, argumentObj] of this.#arguments_map.entries()) {
       help += `    ${argument}\n`;
-      help += `        ${this.arguments[argument]}\n`;
+      help += `        ${argumentObj.description}\n`;
     }
     help += `\n`;
 
@@ -179,7 +188,9 @@ export abstract class Subcommand {
     // show that the arg has "(no description)"
     args.forEach((arg: string) => {
       if (!(arg in this.arguments)) {
-        this.arguments[arg] = "(no description)";
+        this.#arguments_map.set(arg, {
+          description: "(no description)",
+        });
       }
     });
 

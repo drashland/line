@@ -4,6 +4,12 @@ export interface IConstructable<T> {
   new(...args: unknown[]): T;
 }
 
+export interface IArgument {
+  description: string;
+  // type: string;
+  value?: string;
+}
+
 export interface IOption {
   takes_value: boolean;
   value?: boolean | string;
