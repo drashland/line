@@ -1,11 +1,11 @@
 import * as Line from "../mod.ts";
+import * as argParser from "./arg_parser.ts";
 
 /**
  * This class represents a subcommand. It can only be executed by the main
  * command.
  */
-export class Subcommand {
-  [key: string]: unknown
+export abstract class Subcommand {
 
   /**
    * This subcommand's signature. For example, `copy [source] [destination]`.
@@ -51,6 +51,12 @@ export class Subcommand {
   }
 
   //////////////////////////////////////////////////////////////////////////////
+  // FILE MARKER - ABSTRACT METHODS ////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+
+  public abstract handle(): void;
+
+  //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - PUBLIC METHODS //////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
 
@@ -84,21 +90,45 @@ export class Subcommand {
   }
 
   /**
-   * Set up this subcommand so it can handle any options and arguments passed in
-   * through the command line..
+   * Run this subcommand.
    */
-  public setUp(): void {
-    this.#validateSubcommand();
-    this.#createOptionsMap();
-    this.#createArgumentsMap();
+  public run(): void {
+    argParser.parseOptionsInCommandLine(
+      this.cli.command_line.getDenoArgs(),
+      this.#getSubcommandName(),
+      "subcommand",
+      this.#options_map,
+      this.showHelp,
+    );
+
+    argParser.setOptionsMapActualValues(
+      this.cli.command_line.getDenoArgs(),
+      this.#getSubcommandName(),
+      "subcommand",
+      this.#options_map,
+    );
+
     this.cli.command_line.matchArgumentsToNames(this);
+
+    this.handle();
+
+    Deno.exit(0);
+  }
+
+  public setUp(): void {
+    this.#createArgumentsMap();
+
+    argParser.setOptionsMapInitialValues(
+      this.options,
+      this.#options_map,
+    );
   }
 
   /**
    * Show this subcommand's help menu.
    */
-  public showHelp(): string | void {
-    const subcommand = this.signature.split(" ")[0];
+  public showHelp(): void {
+    const subcommand = this.#getSubcommandName();
 
     let help = `USAGE (for: \`${this.cli.main_command.signature} ${subcommand}\`)\n\n`;
 
@@ -162,18 +192,6 @@ export class Subcommand {
   }
 
   /**
-   * Create the options Map so that it can be used during runtime. We do not use
-   * `this.options` directly because it is just the interface that users use to
-   * define their options. The Map created in this method creates an object that
-   * we can parse better during runtime.
-   */
-  #createOptionsMap(): void {
-    this.#setOptionsMapInitialValues();
-    this.#validateOptionsInCommandLine();
-    this.#setOptionsMapActualValues();
-  }
-
-  /**
    * Get the subcommand form the signature, which is the first item in the
    * signature.
    *
@@ -215,47 +233,6 @@ export class Subcommand {
   }
 
   /**
-   * Take the validated command line and set actual values in the options Map.
-   */
-  #setOptionsMapActualValues(): void {
-    let denoArgs = this.cli.command_line.getDenoArgs();
-
-    // Remove the subcommand from the command line. We only care about the items
-    // that come after the subcommand.
-    const subcommandIndex = denoArgs.indexOf(this.#getSubcommandName());
-    denoArgs = denoArgs.slice(subcommandIndex + 1, denoArgs.length);
-
-
-    for (const [option, optionObject] of this.#options_map.entries()) {
-      const optionLocation = denoArgs.indexOf(option);
-
-      // If the option is not in the command line, then skip this process
-      if (optionLocation === -1) {
-        continue;
-      }
-
-      // If we get here, then the option is present in the command line.
-      // Therefore, we check to see if it takes in a value. If it does, then the
-      // next item in the command line is the option's value.
-      if (optionObject.takes_value) {
-        optionObject.value = denoArgs[optionLocation + 1];
-        continue;
-      }
-
-      // If we get here, then the option does not take in a value, but it still
-      // exists in the command line. Therefore, we just set it to `true` to
-      // denote that, "Yes, this option exists in the command line," and calls
-      // to `this.option(optionName)` will return `true`.
-      //
-      // This code is introduced because sometimes users do not want their
-      // options to take in values. They just want the option to exist; and if
-      // it does, then they can handle it accordingly in their `handle()`
-      // methods.
-      optionObject.value = true;
-    }
-  }
-
-  /**
    * Format the options for help menu purposes.
    *
    * @returns The formatted options.
@@ -275,82 +252,4 @@ export class Subcommand {
 
     return formatted;
   }
-
-  /**
-   * Set the initial values of the options Map.
-   */
-  #setOptionsMapInitialValues(): void {
-    // Create the options map
-    for (const optionSignatures in this.options) {
-      // The key in the `options` property can be a command-delimited list of
-      // options, so we split on the commad just in case it is a comma-delimited
-      // list
-      const split = optionSignatures.split(",");
-
-      // For each option signature specified ...
-      split.forEach((signature: string) => {
-        // ... trim leading/trailing spaces that might be in the signature
-        signature = signature.trim();
-
-        // ... check to see if this option takes in a value
-        let optionTakesValue = false;
-        if (signature.includes("[value]")) {
-          // If it does take in a value, then take out the `[value]` portion of
-          // the signature. We do not need this when creating the options Map.
-          signature = signature.replace(/\s+\[value\]/, "").trim();
-          optionTakesValue = true;
-        }
-
-        this.#options_map.set(signature, {
-          takes_value: optionTakesValue,
-          // The value starts off as `undefined` because we do not know what the
-          // value of the option is yet. We find out later in this method.
-          value: undefined,
-        });
-      });
-    }
-  }
-
-  /**
-   * This should be called after `this.#setOptionsMapInitialValues()`. Reason
-   * being, this method uses the options Map to check if options exist and the
-   * `#setOptionsMapInitialValues()` creates the Map.
-   *
-   * This method validates that all options passed into the command line for
-   * this subcommand meet all requirements.
-   *
-   * If any option is passed in that is not part of the subcommand, then the
-   * program will exit.
-   */
-  #validateOptionsInCommandLine(): void {
-    let denoArgs = this.cli.command_line.getDenoArgs();
-
-    // Remove the subcommand from the command line. We only care about the items
-    // that come after the subcommand.
-    const subcommandIndex = denoArgs.indexOf(this.#getSubcommandName());
-    denoArgs = denoArgs.slice(subcommandIndex + 1, denoArgs.length);
-
-    denoArgs.forEach((arg: string) => {
-      if (arg.match(/^-/)) {
-        if (!this.#options_map.has(arg)) {
-          console.log(`Unknown '${arg}' option found.`);
-          Deno.exit(1);
-        }
-      }
-    });
-  }
-
-  /**
-   * Validate this subcommand. Exit if there are any errors.
-   */
-  #validateSubcommand(): void {
-    if (!this.handle) {
-      console.log(`Subcommand '${this.#getSubcommandName()}' does not have a \`handle()\` method implemented.`);
-      Deno.exit(1);
-    }
-
-    // TODO(crookse): Check that the options' signatures are valid
-    // TODO(crookse): Check that the arguments have descriptions
-  }
-
 }

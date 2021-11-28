@@ -1,8 +1,16 @@
 import * as Line from "../mod.ts";
 
+export interface IConstructable<T> {
+  new(...args: unknown[]): T;
+}
+
 export interface IOption {
   takes_value: boolean;
   value?: boolean | string;
+}
+
+export interface IHelpable {
+  showHelp: () => void;
 }
 
 export interface ICommand {

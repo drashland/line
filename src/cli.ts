@@ -1,4 +1,6 @@
 import * as Line from "../mod.ts";
+import { IConstructable } from "./interfaces.ts";
+import { Subcommand } from "./subcommand.ts";
 
 /**
  * A class to help build CLIs.
@@ -25,14 +27,14 @@ export class Cli {
   public name: string;
 
   /**
-   * All of the subcommands from the command, but instantiated.
-   */
-  public subcommands: Line.Subcommand[] = [];
-
-  /**
    * This CLI's version.
    */
   public version: string;
+
+  /**
+   * All of the subcommands from the main command, but instantiated.
+   */
+  #subcommands: Subcommand[] = [];
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
@@ -49,6 +51,7 @@ export class Cli {
     this.version = options.version;
     this.main_command = new (options.command as typeof Line.Command)(this);
     this.command_line = new Line.CommandLine(this, Deno.args);
+    this.#setUpSubcommands();
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -59,8 +62,6 @@ export class Cli {
    * Run this CLI.
    */
   public async run(): Promise<void> {
-    this.instantiateSubcommands();
-
     if (this.main_command.setUp) {
       this.main_command.setUp();
     }
@@ -78,27 +79,27 @@ export class Cli {
     }
 
     // If the input matches a subcommand, then let the subcommand take over
-    this.subcommands.forEach((subcommand: Line.Subcommand) => {
+    this.#subcommands.forEach((subcommand: Subcommand) => {
       if (input == subcommand.signature!.split(" ")[0]) {
 
-        subcommand.setUp();
+        const denoArgs = Deno.args.slice();
 
         // No args passed to the subcommand? Show how to use the subcommand.
-        if (!Deno.args[1]) {
+        if (!denoArgs[1]) {
           subcommand.showHelp();
           Deno.exit(0);
         }
 
         // Show the subcommands help menu?
-        if (Deno.args[1].trim() == "-h" || Deno.args[1].trim() == "--help") {
+        if (
+          denoArgs.indexOf("-h") !== -1
+          || denoArgs.indexOf("--help") !== -1
+        ) {
           subcommand.showHelp();
           Deno.exit(0);
         }
 
-        if (subcommand.handle && typeof subcommand.handle == "function") {
-          subcommand.handle();
-          Deno.exit(0);
-        }
+        subcommand.run();
       }
     });
 
@@ -114,9 +115,9 @@ export class Cli {
   }
 
   /**
-   * Instantiate all subcommands so that they can be run.
+   * Instantiate all subcommands so that this class can run them during runtime.
    */
-  public instantiateSubcommands(): void {
+  #setUpSubcommands(): void {
     if (!this.main_command.subcommands) {
       return;
     }
@@ -125,13 +126,10 @@ export class Cli {
       return;
     }
 
-    this.main_command.subcommands.forEach((subcommand: typeof Line.Subcommand) => {
-      // TODO(crookse) Validate subcommand fields and methods
-      this.subcommands.push(
-        new (subcommand as unknown as typeof Line.Subcommand)(
-          this,
-        ),
-      );
+    this.main_command.subcommands.forEach((subcommand: typeof Subcommand) => {
+      const subcommandObj = new (subcommand as unknown as IConstructable<Subcommand>)(this)
+      subcommandObj.setUp();
+      this.#subcommands.push(subcommandObj);
     });
   }
 
@@ -158,9 +156,9 @@ export class Cli {
       help += `\n`;
     }
 
-    if (this.subcommands.length > 0) {
+    if (this.#subcommands.length > 0) {
       help += `SUBCOMMANDS\n\n`;
-      this.subcommands.forEach((subcommand: Line.Subcommand) => {
+      this.#subcommands.forEach((subcommand: Subcommand) => {
         help += `    ${subcommand.signature.split(" ")[0]}\n`;
         help += `        ${subcommand.description}\n`;
       });
@@ -191,7 +189,7 @@ export class Cli {
    * @returns The usage section.
    */
   protected getUsage(): string {
-    if (this.subcommands.length > 0) {
+    if (this.#subcommands.length > 0) {
       return `    ${this.main_command.signature} [option]
     ${this.main_command.signature} [subcommand] [subcommand options] [args]\n`;
     }
