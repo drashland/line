@@ -114,22 +114,15 @@ export abstract class Subcommand {
     const commandIndex = denoArgs.indexOf(this.#getSubcommandName());
     denoArgs = denoArgs.slice(commandIndex + 1, denoArgs.length);
 
-    const optionsParsingErrors = argParser.parseOptionsInCommandLine(
-      denoArgs,
-      this.#getSubcommandName(),
-      "subcommand",
-      this.#options_map,
-      this.showHelp,
-    );
-
     const optionsErrors = argParser.extractOptionsFromDenoArgs(
       denoArgs,
       this.#getSubcommandName(),
       "subcommand",
       this.#options_map,
+      this.#arguments_map.size,
     );
 
-    const argsErrors = argParser.matchArgumentsToNames(
+    const argsErrors = argParser.extractArgumentsFromDenoArgs(
       denoArgs,
       this.#getSubcommandName(),
       "subcommand",
@@ -137,15 +130,15 @@ export abstract class Subcommand {
       this.#arguments_map,
     );
 
-    let errors = optionsErrors.concat(argsErrors)
-    errors = errors.concat(optionsParsingErrors);
+    // Combine all the errors and remove any duplicates
+    const errors = [...new Set(optionsErrors.concat(argsErrors))];
 
     if (errors.length > 0) {
       let errorString = "";
       errors.forEach((error: string) => {
         errorString += `\n  * ${error}`;
       });
-      console.log(colors.red(`[ERROR] `) + `Subcommand '${this.#getSubcommandName()}' used incorrectly. Errors found:\n${errorString}`);
+      console.log(colors.red(`[ERROR] `) + `Subcommand '${this.#getSubcommandName()}' used incorrectly. Error(s) found:\n${errorString}`);
       Deno.exit(1);
     }
 

@@ -41,7 +41,7 @@ export function setArgumentsMapInitialValues(
  * @param command - The command in question that should have the command line
  * arguments matched to its signature.
  */
-export function matchArgumentsToNames(
+export function extractArgumentsFromDenoArgs(
   denoArgs: string[],
   commandName: string,
   commandType: "command" | "subcommand",
@@ -62,15 +62,27 @@ export function matchArgumentsToNames(
   const commandIndex = denoArgs.indexOf(commandName);
   denoArgs = denoArgs.slice(commandIndex + 1, denoArgs.length);
 
-  // Match the items in the command line to arguments in the command
-  let index = 0;
+  // Match the arguments in the command line to arguments in the command
+  // signature
   for (const [argName, argObject] of argsMap.entries()) {
-    const argValue = denoArgs[index];
+    // The first item is the arg value
+    const argValue = denoArgs[0];
+
     if (!argValue) {
-      errors.push(`Argument '${argName}' is missing.`);
+      errors.push(`Argument '${argName}' is missing`);
+    } else {
+      argObject.value = argValue;
+      // Remove the first item from Deno args. When we do this, the next item
+      // will be the first item.
+      denoArgs.splice(0, 1);
     }
-    argObject.value = argValue;
-    index++;
+  }
+
+  // At this point, all of the Deno args should be extracted. The Deno args
+  // array should contain 0 elements. If there are any elements left, then too
+  // many arguments were given.
+  if (denoArgs.length > 0) {
+    errors.push(`Extra arguments provided: ${denoArgs.join(", ")}.`);
   }
 
   return errors;
@@ -87,8 +99,11 @@ export function extractOptionsFromDenoArgs(
   commandName: string,
   commandType: "command" | "subcommand",
   optionsMap: Map<string, IOption>,
+  numCommandArguments: number,
 ): string[] {
-  const errors = [];
+  const errors: string[] = [];
+
+  let optionsExtracted: IOption[] = [];
 
   for (const [option, optionObject] of optionsMap.entries()) {
     const optionLocation = denoArgs.indexOf(option);
@@ -98,26 +113,19 @@ export function extractOptionsFromDenoArgs(
       continue;
     }
 
-    const nextValue = denoArgs[optionLocation + 1];
+    // Check if this option has already been extracted from the command line
+    if (optionAlreadyExtracted(option, optionsExtracted)) {
+      continue;
+    }
 
     // If we get here, then the option is present in the command line.
     // Therefore, we check to see if it takes in a value. If it does, then the
     // next item in the command line is the option's value.
     if (optionObject.takes_value) {
+      const nextValue = denoArgs[optionLocation + 1];
       optionObject.value = nextValue;
       denoArgs.splice(optionLocation, 2);
-      continue;
-    }
-
-    // If we get here, then we need to check if the next item in the command
-    // line is an option. If it is not, then:
-    //
-    //   1. It is a value
-    //   2. The option that we are currently checking does not take a value
-    //   3. We throw an error
-    if (!optionsMap.has(nextValue)) {
-      errors.push(`Option '${option}' does not take in a value. \`${option} ${nextValue}\` was given.`);
-      denoArgs.splice(optionLocation, 2);
+      optionsExtracted.push(optionObject);
       continue;
     }
 
@@ -132,6 +140,23 @@ export function extractOptionsFromDenoArgs(
     // methods.
     optionObject.value = true;
     denoArgs.splice(optionLocation, 1);
+    optionsExtracted.push(optionObject);
+  }
+
+  // Take off elements from the end of the Deno args array. The number of
+  // elements to take off is equal to the number of arguments the command takes.
+  // We use `.slice()` to make a copy of the Deno args array. We do not want to
+  // mutate it in case this function does not return any errors.
+  const denoArgsCopy = denoArgs.slice()
+  denoArgsCopy.splice((denoArgs.length - numCommandArguments), numCommandArguments);
+
+  if (denoArgsCopy.length > 0) {
+    denoArgsCopy.forEach((arg: string) => {
+      if (optionsMap.has(arg)) {
+        denoArgs.splice(denoArgs.indexOf(arg), 1);
+        errors.push(`Option '${optionsMap.get(arg)!.signatures.join(", ")}' provided more than once`);
+      }
+    });
   }
 
   return errors;
@@ -146,60 +171,46 @@ export function setOptionsMapInitialValues(
 ): void {
   // Create the options map
   for (const optionSignatures in options) {
+    const optionObject: IOption = {
+      signatures: [],
+      takes_value: false,
+    };
+
     // The key in the `options` property can be a command-delimited list of
     // options, so we split on the commad just in case it is a comma-delimited
     // list
     const split = optionSignatures.split(",");
-
     // For each option signature specified ...
     split.forEach((signature: string) => {
       // ... trim leading/trailing spaces that might be in the signature
       signature = signature.trim();
 
+
       // ... check to see if this option takes in a value
-      let optionTakesValue = false;
       if (signature.includes("[value]")) {
         // If it does take in a value, then take out the `[value]` portion of
         // the signature. We do not need this when creating the options Map.
         signature = signature.replace(/\s+\[value\]/, "").trim();
-        optionTakesValue = true;
+        optionObject.takes_value = true;
       }
 
-      optionsMap.set(signature, {
-        takes_value: optionTakesValue,
-      });
+      optionObject.signatures.push(signature);
+      optionsMap.set(signature, optionObject)
     });
   }
 }
 
-/**
- * This should be called after `this.#setOptionsMapInitialValues()`. Reason
- * being, this method uses the options Map to check if options exist and the
- * `#setOptionsMapInitialValues()` creates the Map.
- *
- * This method validates that all options passed into the command line for
- * this subcommand meet all requirements.
- *
- * If any option is passed in that is not part of the subcommand, then the
- * program will exit.
- */
-export function parseOptionsInCommandLine(
-  denoArgs: string[],
-  commandName: string,
-  commandType: "command" | "subcommand",
-  optionsMap: Map<string, IOption>,
-  helpMenu: () => void,
-): string[] {
-  const errors: string[] = [];
 
-  denoArgs.forEach((arg: string, index: number) => {
-    if (arg.match(/^-/)) {
-      if (!optionsMap.has(arg)) {
-        errors.push(`Unknown '${arg}' option was given.`);
-        denoArgs.splice(index, 1);
-      }
+/**
+ * Has the specified option been extracted from the command line?
+ */
+function optionAlreadyExtracted(optionName: string, optionsExtracted: IOption[]) {
+  let extracted = false;
+  optionsExtracted.forEach((optionExtracted: IOption) => {
+    if (optionExtracted.signatures.indexOf(optionName) !== -1) {
+      extracted = true;
     }
   });
 
-  return errors;
+  return extracted;
 }

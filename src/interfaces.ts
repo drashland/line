@@ -11,6 +11,7 @@ export interface IArgument {
 }
 
 export interface IOption {
+  signatures: string[];
   takes_value: boolean;
   value?: boolean | string;
 }
