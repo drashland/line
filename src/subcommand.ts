@@ -143,8 +143,9 @@ export abstract class Subcommand {
       });
       console.log(
         colors.red(`[ERROR] `) +
-          `Subcommand '${this.name}' used incorrectly. Error(s) found:\n${errorString}`,
+          `Subcommand '${this.name}' used incorrectly. Error(s) found:\n${errorString}\n`,
       );
+      console.log(this.#getUsage());
       Deno.exit(1);
     }
 
@@ -179,26 +180,22 @@ export abstract class Subcommand {
   public showHelp(): void {
     const subcommand = this.name;
 
-    let help = `USAGE (for: \`${this.main_command.name} ${subcommand}\`)\n\n`;
+    let help = this.#getUsage();
 
-    help += this.#getUsage();
-
-    help += "\n";
-    help += "ARGUMENTS\n\n";
+    help += "\n\nARGUMENTS\n\n";
     for (const [argument, argumentObj] of this.#arguments_map.entries()) {
       help += `    ${argument}\n`;
       help += `        ${argumentObj.description}\n`;
     }
-    help += `\n`;
 
-    help += `OPTIONS\n\n`;
+    help += `\nOPTIONS\n\n`;
     help += `    -h, --help\n`;
     help += `        Show this menu.\n`;
 
-    if (Object.keys(this.options).length > 0) {
-      for (const key in this.options) {
-        help += `    ${this.#formatOptions(key)}\n`;
-        help += `        ${this.options[key]}\n`;
+    if (this.#options_map.size > 0) {
+      for (const [option, optionObject] of this.#options_map.entries()) {
+        help += `    ${option}\n`;
+        help += `        ${optionObject.description}\n`;
       }
     }
 
@@ -211,13 +208,15 @@ export abstract class Subcommand {
    * @returns The "USAGE" section.
    */
   #getUsage(): string {
+
     const mainCommand = this.main_command.name;
 
     const split = this.signature.split(" ");
-    const subcommand = split[0];
 
-    let formatted = `    ${mainCommand} ${subcommand} [option]
-    ${mainCommand} ${subcommand} [options] `;
+    let formatted = `USAGE (for: \`${this.main_command.name} ${this.name}\`)\n\n`;
+
+    formatted += `    ${mainCommand} ${this.name} [option]
+    ${mainCommand} ${this.name} [options] `;
 
     // Take off the subcommand so that we do not parse it when we start
     // formatting the signature in the `.forEach()` below
@@ -233,7 +232,7 @@ export abstract class Subcommand {
       }
     });
 
-    return formatted + "\n";
+    return formatted;
   }
 
   /**

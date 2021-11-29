@@ -50,8 +50,6 @@ export function extractArgumentsFromDenoArgs(
 ): string[] {
   const errors: string[] = [];
 
-  console.log(denoArgs);
-
   // Remove the command from the signature. We only care about its arguments.
   commandSignature = commandSignature.replace(commandName, "").trim();
 
