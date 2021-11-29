@@ -1,5 +1,6 @@
 import * as Line from "../mod.ts";
 import * as argParser from "./arg_parser.ts";
+import { Command } from "./command.ts";
 import { IArgument, IOption } from "./interfaces.ts";
 import { TArgument, TOption } from "./types.ts";
 import { colors } from "../deps.ts";
@@ -29,10 +30,12 @@ export abstract class Subcommand {
    */
   public arguments: TArgument = {};
 
+  public name!: string;
+
   /**
    * See Line.Cli.
    */
-  public cli: Line.Cli;
+  public main_command: Command;
 
   /**
    * Used internally during runtime for performance and getting/checking of
@@ -53,8 +56,8 @@ export abstract class Subcommand {
   /**
    * @param cli - See Line.Cli.
    */
-  constructor(cli: Line.Cli) {
-    this.cli = cli;
+  constructor(mainCommand: Command) {
+    this.main_command = mainCommand;
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -106,17 +109,17 @@ export abstract class Subcommand {
   /**
    * Run this subcommand.
    */
-  public run(): void {
+  public async run(): Promise<void> {
     let denoArgs = Deno.args.slice(); // Make a copy that we  can mutate
 
     // Remove the subcommand from the command line. We only care about the items
     // that come after the subcommand.
-    const commandIndex = denoArgs.indexOf(this.#getSubcommandName());
+    const commandIndex = denoArgs.indexOf(this.name);
     denoArgs = denoArgs.slice(commandIndex + 1, denoArgs.length);
 
     const optionsErrors = argParser.extractOptionsFromDenoArgs(
       denoArgs,
-      this.#getSubcommandName(),
+      this.name,
       "subcommand",
       this.#options_map,
       this.#arguments_map.size,
@@ -124,25 +127,28 @@ export abstract class Subcommand {
 
     const argsErrors = argParser.extractArgumentsFromDenoArgs(
       denoArgs,
-      this.#getSubcommandName(),
+      this.name,
       "subcommand",
       this.signature,
       this.#arguments_map,
     );
 
     // Combine all the errors and remove any duplicates
-    const errors = [...new Set(optionsErrors.concat(argsErrors))];
+    const errors = [...new Set(optionsErrors.concat(argsErrors))].sort();
 
     if (errors.length > 0) {
       let errorString = "";
       errors.forEach((error: string) => {
         errorString += `\n  * ${error}`;
       });
-      console.log(colors.red(`[ERROR] `) + `Subcommand '${this.#getSubcommandName()}' used incorrectly. Error(s) found:\n${errorString}`);
+      console.log(
+        colors.red(`[ERROR] `) +
+          `Subcommand '${this.name}' used incorrectly. Error(s) found:\n${errorString}`,
+      );
       Deno.exit(1);
     }
 
-    this.handle();
+    await this.handle();
 
     Deno.exit(0);
   }
@@ -151,9 +157,11 @@ export abstract class Subcommand {
    * Set up this subcommand so it can be used during runtime.
    */
   public setUp(): void {
+    this.name = this.signature.split(" ")[0];
+
     argParser.setArgumentsMapInitialValues(
       this.signature,
-      this.#getSubcommandName(),
+      this.name,
       "subcommand",
       this.arguments,
       this.#arguments_map,
@@ -169,10 +177,9 @@ export abstract class Subcommand {
    * Show this subcommand's help menu.
    */
   public showHelp(): void {
-    const subcommand = this.#getSubcommandName();
+    const subcommand = this.name;
 
-    let help =
-      `USAGE (for: \`${this.cli.main_command.signature} ${subcommand}\`)\n\n`;
+    let help = `USAGE (for: \`${this.main_command.name} ${subcommand}\`)\n\n`;
 
     help += this.#getUsage();
 
@@ -198,27 +205,13 @@ export abstract class Subcommand {
     console.log(help);
   }
 
-  //////////////////////////////////////////////////////////////////////////////
-  // FILE MARKER - PRIVATE METHODS /////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * Get the subcommand form the signature, which is the first item in the
-   * signature.
-   *
-   * @returns The subcommand.
-   */
-  #getSubcommandName(): string {
-    return this.signature.split(" ")[0];
-  }
-
   /**
    * Get the "USAGE" section for the help menu.
    *
    * @returns The "USAGE" section.
    */
   #getUsage(): string {
-    const mainCommand = this.cli.main_command.signature;
+    const mainCommand = this.main_command.name;
 
     const split = this.signature.split(" ");
     const subcommand = split[0];

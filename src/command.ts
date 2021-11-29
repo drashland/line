@@ -1,9 +1,15 @@
 import * as Line from "../mod.ts";
+import * as argParser from "./arg_parser.ts";
+import { Subcommand } from "./subcommand.ts";
+import { TArgument, TOption } from "./types.ts";
+import { IArgument, IOption } from "./interfaces.ts";
+import { IConstructable } from "./interfaces.ts";
+import { colors } from "../deps.ts";
 
 /**
  * The main command of the CLI.
  */
-export class Command implements Line.Interfaces.ICommand {
+export abstract class Command {
   /**
    * The main command that is used on the command line. For example, in the
    * following command line ...
@@ -12,7 +18,7 @@ export class Command implements Line.Interfaces.ICommand {
    *
    * ... the `deno` part is the main command.
    */
-  public signature!: string;
+  abstract signature: string;
 
   /**
    * An array of subcommands that this main command can execute.
@@ -21,20 +27,48 @@ export class Command implements Line.Interfaces.ICommand {
 
   public cli: Line.Cli;
 
-  public arguments: { [k: string]: string } = {};
+  public arguments: TArgument = {};
 
-  public options: Line.Types.TOption = {};
+  public name!: string;
 
-  public options_parsed: string[] = [];
+  public options: TOption = {};
 
-  public takes_args = false;
+  public takes_arguments: boolean = false;
+  public takes_options: boolean = false;
+  public takes_subcommands: boolean = false;
+
+  /**
+   * Used internally during runtime for performance and getting/checking of
+   * arguments.
+   */
+  #arguments_map: Map<string, IArgument> = new Map();
+
+  /**
+   * Used internally during runtime for performance and getting/checking of
+   * options.
+   */
+  #options_map: Map<string, IOption> = new Map();
+
+  /**
+   * Used internally during runtime for performance and getting/checking of
+   * options.
+   */
+  #subcommands_map: Map<string, Subcommand> = new Map();
+
+  //////////////////////////////////////////////////////////////////////////////
+  // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
 
   constructor(cli: Line.Cli) {
     this.cli = cli;
   }
 
+  public handle(): void {
+    return;
+  }
+
   //////////////////////////////////////////////////////////////////////////////
-  // FILE MARKER - METHODS - PUBLIC ////////////////////////////////////////////
+  // FILE MARKER - PUBLIC METHODS //////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
 
   /**
@@ -42,66 +76,248 @@ export class Command implements Line.Interfaces.ICommand {
    *
    * @param argumentName - The argument in question.
    *
-   * @returns The value of the argument or undefined if no value was specified.
+   * @returns The value of the argument in the command line or undefined if the
+   * argument does not exist.
    */
-  public argument(argument: string): string | undefined {
-    return this.cli.command_line.getArgumentValue(this, argument);
+  public argument(argumentName: string): string | undefined {
+    const argumentObject = this.#arguments_map.get(argumentName);
+
+    if (argumentObject) {
+      return argumentObject.value;
+    }
+
+    return undefined;
   }
 
   /**
    * Get the value of the specified option.
    *
-   * @param option - The option in question.
+   * @param optionName - The option in question.
    *
-   * @returns True if the option exists in the command line or the value of the
-   * option if one was specified.
+   * @returns The value of the option in the command line or undefined if the
+   * option does not exist.
    */
-  public option(option: string): string | boolean | undefined {
-    return this.cli.command_line.getOptionValue(this, option);
+  public option(optionName: string): string | boolean | undefined {
+    const optionObject = this.#options_map.get(optionName);
+
+    if (optionObject) {
+      return optionObject.value;
+    }
+
+    return undefined;
+  }
+
+  public async run(input: string): Promise<void> {
+    const denoArgs = Deno.args.slice();
+
+    // If this command takes in arguments, then we expect one to be specified
+    if (
+      (this.takes_arguments || this.#subcommands_map.size > 0) &&
+      (denoArgs.length <= 0)
+    ) {
+      this.showHelp();
+      Deno.exit(1);
+    }
+
+    // If the input matches a subcommand, then let the subcommand take over
+    for (
+      const [subcommand, subcommandObject] of this.#subcommands_map.entries()
+    ) {
+      if (input == subcommandObject.name) {
+        // No args passed to the subcommand? Show how to use the subcommand.
+        if (!denoArgs[1]) {
+          subcommandObject.showHelp();
+          Deno.exit(1);
+        }
+
+        // Show the subcommands help menu?
+        if (
+          denoArgs.indexOf("-h") !== -1 ||
+          denoArgs.indexOf("--help") !== -1
+        ) {
+          subcommandObject.showHelp();
+          Deno.exit(0);
+        }
+
+        await subcommandObject.run();
+      }
+    }
+
+    const optionsErrors = argParser.extractOptionsFromDenoArgs(
+      denoArgs,
+      this.name,
+      "command",
+      this.#options_map,
+      this.#arguments_map.size,
+    );
+
+    const argsErrors = argParser.extractArgumentsFromDenoArgs(
+      denoArgs,
+      this.name,
+      "command",
+      this.signature,
+      this.#arguments_map,
+    );
+
+    // Combine all the errors and remove any duplicates
+    const errors = [...new Set(optionsErrors.concat(argsErrors))].sort();
+
+    if (errors.length > 0) {
+      let errorString = "";
+      errors.forEach((error: string) => {
+        errorString += `\n  * ${error}`;
+      });
+      console.log(
+        colors.red(`[ERROR] `) +
+          `Command '${this.name}' used incorrectly. Error(s) found:\n${errorString}\n`,
+      );
+      console.log(this.#getUsage());
+      Deno.exit(1);
+    }
+
+    // If we get here, then the input did not match a subcommand. Therefore, we
+    // pass the argument to the main command for further handling (if a handler
+    // method exists).
+    // If the input wasn't a subcommand, then let the main command take over
+    await this.handle();
+    Deno.exit(0);
+  }
+
+  /**
+   * Instantiate all subcommands so that this class can run them during runtime.
+   */
+  #setUpSubcommands(): void {
+    if (this.subcommands.length <= 0) {
+      return;
+    }
+
+    this.subcommands.forEach((subcommand: typeof Subcommand) => {
+      const subcommandObj =
+        new (subcommand as unknown as IConstructable<Subcommand>)(this);
+      subcommandObj.setUp();
+      this.#subcommands_map.set(
+        subcommandObj.name,
+        subcommandObj,
+      );
+    });
   }
 
   /**
    * Set up this main comman.
    */
   public setUp(): void {
-    if (!this.signature) {
-      throw new Error("The main command is missing the `signature` property.");
+    this.name = this.signature.split(" ")[0];
+
+    this.#setUpSubcommands();
+
+    argParser.setArgumentsMapInitialValues(
+      this.signature,
+      this.#getCommandName(),
+      "command",
+      this.arguments,
+      this.#arguments_map,
+    );
+
+    argParser.setOptionsMapInitialValues(
+      this.options,
+      this.#options_map,
+    );
+
+    if (this.#subcommands_map.size > 0) {
+      this.takes_subcommands = true;
+    }
+    if (this.#arguments_map.size > 0) {
+      this.takes_arguments = true;
+    }
+    if (this.#options_map.size > 0) {
+      this.takes_options = true;
+    }
+  }
+
+  #getUsage(): string {
+    let usage = `USAGE\n\n`;
+
+    usage += `    ${this.name} [option]\n`;
+    let options = "";
+
+    if (this.takes_options) {
+      options = " [options]";
     }
 
-    // A main command cannot take in args AND have subcommands. Reason is
-    // because we cannot differentiate between an argument AND a subcommand.
-    const split = this.signature.split(" ");
-    split.shift();
-    if (split.length > 0) {
-      this.takes_args = true;
-      if (this.subcommands.length > 0) {
-        throw new Error(
-          "The main command cannot take in args and have subcommands.",
-        );
+    if (
+      this.takes_arguments &&
+      !this.takes_subcommands
+    ) {
+      usage += `    ${this.name}${options}`;
+      for (const [argument, argumentObject] of this.#arguments_map.entries()) {
+        usage += ` [arg: ${argument}]`;
       }
     }
 
-    // Create the list of options that this main command takes
-    // if (Object.keys(this.options).length > 0) {
-    //   for (const options in this.options) {
-    //     let split = options.split(",");
-    //     split.forEach((option) => {
-    //       this.options_parsed.push(option.trim());
-    //     });
-    //   }
-    // }
+    if (
+      this.takes_subcommands &&
+      !this.takes_arguments
+    ) {
+      usage += `    ${this.name} [subcommand]`;
+    }
 
-    // this.cli.command_line.extractOptionsFromArguments(this);
+    if (
+      this.takes_arguments &&
+      this.takes_subcommands
+    ) {
+      usage += `    ${this.name}${options}`;
 
-    if (this.takes_args) {
-      this.cli.command_line.matchArgumentsToNames(this);
-      for (const argument in this.cli.command_line.arguments) {
-        if (!(argument in this.arguments)) {
-          throw new Error(
-            `Main command argument '${argument}' is missing a description.`,
-          );
-        }
+      for (const [argument, argumentObject] of this.#arguments_map.entries()) {
+        usage += ` [arg: ${argument}]`;
+      }
+
+      usage += `\n    ${this.name} [subcommand]`;
+    }
+
+    return usage;
+  }
+
+  /**
+   * Show this CLI's help menu.
+   */
+  public showHelp(): void {
+    let help = this.#getUsage();
+
+    if (this.takes_arguments) {
+      help += `\n\nARGUMENTS\n\n`;
+      for (const [argument, argumentObject] of this.#arguments_map.entries()) {
+        help += `    ${argument}\n`;
+        help += `        ${argumentObject.description}\n`;
       }
     }
+
+    if (this.#subcommands_map.size > 0) {
+      help += `\n\nSUBCOMMANDS\n\n`;
+      for (
+        const [subcommand, subcommandObject] of this.#subcommands_map.entries()
+      ) {
+        help += `    ${subcommand}\n`;
+        help += `        ${subcommandObject.description}\n`;
+      }
+    }
+
+    help += `\n\nOPTIONS\n\n`;
+    help += `    -h, --help\n`;
+    help += `        Show this menu.\n`;
+    help += `    -v, --version\n`;
+    help += `        Show this CLI's version.\n`;
+
+    if (this.#options_map.size > 0) {
+      for (const [option, optionObject] of this.#options_map.entries()) {
+        help += `    ${option}\n`;
+        help += `        ${optionObject.description}\n`;
+      }
+    }
+
+    console.log(help);
+  }
+
+  #getCommandName(): string {
+    return this.signature.split(" ")[0];
   }
 }

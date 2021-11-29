@@ -50,6 +50,8 @@ export function extractArgumentsFromDenoArgs(
 ): string[] {
   const errors: string[] = [];
 
+  console.log(denoArgs);
+
   // Remove the command from the signature. We only care about its arguments.
   commandSignature = commandSignature.replace(commandName, "").trim();
 
@@ -88,7 +90,6 @@ export function extractArgumentsFromDenoArgs(
   return errors;
 }
 
-
 /**
  * Take the command line and set actual values in the options Map. After setting
  * the options, take them out of the command line so it can be checked for
@@ -103,61 +104,61 @@ export function extractOptionsFromDenoArgs(
 ): string[] {
   const errors: string[] = [];
 
+  // Make a copy of the Deno args array to work with. We will use this to
+  // iterate over the array and mutate the original array during iteration.
+  const denoArgsCopy = denoArgs.slice();
+  denoArgsCopy.splice(
+    denoArgsCopy.length - numCommandArguments,
+    numCommandArguments,
+  );
+
   let optionsExtracted: IOption[] = [];
 
-  for (const [option, optionObject] of optionsMap.entries()) {
-    const optionLocation = denoArgs.indexOf(option);
+  let lastOptionProcessed: IOption;
+  let lastOptionProcessedName: null | string = null;
 
-    // If the option is not in the command line, then skip this process
-    if (optionLocation === -1) {
-      continue;
-    }
-
-    // Check if this option has already been extracted from the command line
-    if (optionAlreadyExtracted(option, optionsExtracted)) {
-      continue;
-    }
-
-    // If we get here, then the option is present in the command line.
-    // Therefore, we check to see if it takes in a value. If it does, then the
-    // next item in the command line is the option's value.
-    if (optionObject.takes_value) {
-      const nextValue = denoArgs[optionLocation + 1];
-      optionObject.value = nextValue;
-      denoArgs.splice(optionLocation, 2);
-      optionsExtracted.push(optionObject);
-      continue;
-    }
-
-    // If we get here, then the option does not take in a value, but it still
-    // exists in the command line. Therefore, we just set it to `true` to
-    // denote that, "Yes, this option exists in the command line," and calls
-    // to `this.option(optionName)` will return `true`.
-    //
-    // This code is introduced because sometimes users do not want their
-    // options to take in values. They just want the option to exist; and if
-    // it does, then they can handle it accordingly in their `handle()`
-    // methods.
-    optionObject.value = true;
-    denoArgs.splice(optionLocation, 1);
-    optionsExtracted.push(optionObject);
-  }
-
-  // Take off elements from the end of the Deno args array. The number of
-  // elements to take off is equal to the number of arguments the command takes.
-  // We use `.slice()` to make a copy of the Deno args array. We do not want to
-  // mutate it in case this function does not return any errors.
-  const denoArgsCopy = denoArgs.slice()
-  denoArgsCopy.splice((denoArgs.length - numCommandArguments), numCommandArguments);
-
-  if (denoArgsCopy.length > 0) {
-    denoArgsCopy.forEach((arg: string) => {
-      if (optionsMap.has(arg)) {
-        denoArgs.splice(denoArgs.indexOf(arg), 1);
-        errors.push(`Option '${optionsMap.get(arg)!.signatures.join(", ")}' provided more than once`);
-      }
+  denoArgsCopy.forEach((arg: string, index: number) => {
+    // If this argument has already been processed, then that means we are
+    // processing a duplicate. This is an error.
+    optionsExtracted.forEach((optionExtracted: IOption) => {
+      optionExtracted.signatures.forEach((signature: string) => {
+        if (arg == signature) {
+          errors.push(`Option '${arg}' was provided more than once.`);
+        }
+      });
     });
-  }
+
+    // If the last option processed takes in a value ...
+    if (lastOptionProcessed && lastOptionProcessed.takes_value) {
+      // ... then this current arg is the value. Also, we only assign the value
+      // to the option if the value explicitly has an `undefined` value.
+      // `undefined` means that the value has not been set yet.
+      if (lastOptionProcessed.value === undefined) {
+        lastOptionProcessed.value = arg;
+        denoArgs.splice(denoArgs.indexOf(arg), 1);
+      }
+      return;
+    }
+
+    if (optionsMap.has(arg)) {
+      lastOptionProcessed = optionsMap.get(arg)!;
+      // If the option does not take in a value, but it is an option in this
+      // CLI, then we just set the value to true to say, "Yes, this option
+      // exists and it has been passed into the command line."
+      if (!lastOptionProcessed.takes_value) {
+        lastOptionProcessed.value = true;
+      }
+      lastOptionProcessedName = arg;
+      denoArgs.splice(denoArgs.indexOf(arg), 1);
+      optionsExtracted.push(lastOptionProcessed);
+      return;
+    }
+
+    errors.push(
+      `Option '${lastOptionProcessedName}' does not take in a value. '${arg}' was provided.`,
+    );
+    denoArgs.splice(denoArgs.indexOf(arg), 1);
+  });
 
   return errors;
 }
@@ -172,6 +173,7 @@ export function setOptionsMapInitialValues(
   // Create the options map
   for (const optionSignatures in options) {
     const optionObject: IOption = {
+      description: options[optionSignatures],
       signatures: [],
       takes_value: false,
     };
@@ -185,7 +187,6 @@ export function setOptionsMapInitialValues(
       // ... trim leading/trailing spaces that might be in the signature
       signature = signature.trim();
 
-
       // ... check to see if this option takes in a value
       if (signature.includes("[value]")) {
         // If it does take in a value, then take out the `[value]` portion of
@@ -195,16 +196,18 @@ export function setOptionsMapInitialValues(
       }
 
       optionObject.signatures.push(signature);
-      optionsMap.set(signature, optionObject)
+      optionsMap.set(signature, optionObject);
     });
   }
 }
 
-
 /**
  * Has the specified option been extracted from the command line?
  */
-function optionAlreadyExtracted(optionName: string, optionsExtracted: IOption[]) {
+function optionAlreadyExtracted(
+  optionName: string,
+  optionsExtracted: IOption[],
+) {
   let extracted = false;
   optionsExtracted.forEach((optionExtracted: IOption) => {
     if (optionExtracted.signatures.indexOf(optionName) !== -1) {

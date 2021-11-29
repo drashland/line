@@ -1,20 +1,15 @@
-import * as Line from "../mod.ts";
-import { IConstructable } from "./interfaces.ts";
+import { ICliOptions, ICommand, IConstructable } from "./interfaces.ts";
 import { Subcommand } from "./subcommand.ts";
+import { Command } from "./command.ts";
 
 /**
  * A class to help build CLIs.
  */
 export class Cli {
   /**
-   * See Line.Command.
+   * See Command.
    */
-  public main_command: Line.Interfaces.ICommand;
-
-  /**
-   * See Line.CommandLine.
-   */
-  public command_line: Line.CommandLine;
+  public main_command!: Command;
 
   /**
    * This CLI's description.
@@ -36,6 +31,8 @@ export class Cli {
    */
   #subcommands: Subcommand[] = [];
 
+  #options: ICliOptions;
+
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
@@ -45,13 +42,12 @@ export class Cli {
    *
    * @param options - See ICliOptions for more information.
    */
-  constructor(options: Line.Interfaces.ICliOptions) {
+  constructor(options: ICliOptions) {
+    this.#options = options;
     this.name = options.name;
     this.description = options.description;
     this.version = options.version;
-    this.main_command = new (options.command as typeof Line.Command)(this);
-    this.command_line = new Line.CommandLine(this, Deno.args);
-    this.#setUpSubcommands();
+    this.#setUpMainCommand();
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -68,6 +64,11 @@ export class Cli {
 
     const input = Deno.args[0];
 
+    // If there is no input, then show the user how to use this CLI
+    if (Deno.args.length <= 0) {
+      return this.showHelp();
+    }
+
     // If the input is an option, then process that option
     switch (input) {
       case "-h":
@@ -78,134 +79,16 @@ export class Cli {
         return this.showVersion();
     }
 
-    // If the input matches a subcommand, then let the subcommand take over
-    this.#subcommands.forEach((subcommand: Subcommand) => {
-      if (input == subcommand.signature!.split(" ")[0]) {
-        const denoArgs = Deno.args.slice();
-
-        // No args passed to the subcommand? Show how to use the subcommand.
-        if (!denoArgs[1]) {
-          subcommand.showHelp();
-          Deno.exit(0);
-        }
-
-        // Show the subcommands help menu?
-        if (
-          denoArgs.indexOf("-h") !== -1 ||
-          denoArgs.indexOf("--help") !== -1
-        ) {
-          subcommand.showHelp();
-          Deno.exit(0);
-        }
-
-        subcommand.run();
-      }
-    });
-
-    // If the input wasn't a subcommand, then let the main command take over
-    if (this.main_command.handle) {
-      await this.main_command.handle();
-    } else {
-      // todo show error saying the subcommand wasnt recognised?
-      this.showHelp();
-    }
+    // If we get here, then let the main command take over
+    await this.main_command.run(input);
 
     Deno.exit(0);
   }
 
-  /**
-   * Instantiate all subcommands so that this class can run them during runtime.
-   */
-  #setUpSubcommands(): void {
-    if (!this.main_command.subcommands) {
-      return;
-    }
-
-    if (this.main_command.subcommands.length <= 0) {
-      return;
-    }
-
-    this.main_command.subcommands.forEach((subcommand: typeof Subcommand) => {
-      const subcommandObj =
-        new (subcommand as unknown as IConstructable<Subcommand>)(this);
-      subcommandObj.setUp();
-      this.#subcommands.push(subcommandObj);
-    });
-  }
-
-  //////////////////////////////////////////////////////////////////////////////
-  // FILE MARKER - METHODS - PROTECTED /////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * Show this CLI's help menu.
-   */
   public showHelp(): void {
-    let help = `${this.name} - ${this.description}\n\n`;
-
-    help += `USAGE\n\n`;
-    help += this.getUsage();
-    help += `\n`;
-
-    if (this.main_command.takes_args) {
-      help += `ARGUMENTS\n\n`;
-      for (const argument in this.main_command.arguments) {
-        help += `    ${argument}\n`;
-        help += `        ${this.main_command.arguments[argument]}\n`;
-      }
-      help += `\n`;
-    }
-
-    if (this.#subcommands.length > 0) {
-      help += `SUBCOMMANDS\n\n`;
-      this.#subcommands.forEach((subcommand: Subcommand) => {
-        help += `    ${subcommand.signature.split(" ")[0]}\n`;
-        help += `        ${subcommand.description}\n`;
-      });
-      help += `\n`;
-    }
-
-    help += `OPTIONS\n\n`;
-    help += `    -h, --help\n`;
-    help += `        Show this menu.\n`;
-    help += `    -v, --version\n`;
-    help += `        Show this CLI's version.\n`;
-    help += `\n`;
-
-    if (this.main_command.options_parsed.length > 0) {
-      for (const options in this.main_command.options) {
-        help += `    ${options}\n`;
-        help += `        ${this.main_command.options[options]}\n`;
-      }
-      help += `\n`;
-    }
-
-    console.log(help);
-  }
-
-  /**
-   * Get the "Usage" section of the menu.
-   *
-   * @returns The usage section.
-   */
-  protected getUsage(): string {
-    if (this.#subcommands.length > 0) {
-      return `    ${this.main_command.signature} [option]
-    ${this.main_command.signature} [subcommand] [subcommand options] [args]\n`;
-    }
-
-    let formatted = "";
-
-    const split = this.main_command.signature.split(" ");
-    split.forEach((arg: string, index: number) => {
-      if (split.length == (index + 1)) {
-        formatted += `${arg.replace("[", "[arg: ")}`;
-      } else {
-        formatted += `${arg.replace("[", "[arg: ")} `;
-      }
-    });
-
-    return `    ${formatted} [options]\n`;
+    console.log(`${this.name} - ${this.description}\n`);
+    this.main_command.showHelp();
+    Deno.exit(0);
   }
 
   /**
@@ -213,5 +96,10 @@ export class Cli {
    */
   protected showVersion(): void {
     console.log(`${this.name} ${this.version}`);
+  }
+
+  #setUpMainCommand(): void {
+    this.main_command =
+      new (this.#options.command as unknown as IConstructable<Command>)(this);
   }
 }
