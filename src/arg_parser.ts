@@ -56,7 +56,7 @@ export function extractArgumentsFromDenoArgs(
   // array should contain 0 elements. If there are any elements left, then too
   // many arguments were given.
   if (denoArgs.length > 0) {
-    errors.push(`Extra arguments provided: ${denoArgs.join(", ")}.`);
+    errors.push(`Unknown argument(s) provided: ${denoArgs.join(", ")}.`);
   }
 
   return errors;
@@ -96,14 +96,6 @@ export function extractOptionsFromDenoArgs(
       return;
     }
 
-    // If we already processed this option, then tell the user it was provided
-    // more than once. Options should only be passed in once.
-    if (optionsProcessed.indexOf(option) !== -1) {
-      optionsProcessed.push(option);
-      errors.push(`Option '${option}' was provided more than once`);
-      return;
-    }
-
     // If this option is not in the options map, then we have no idea what it
     // is. The user made a mistake, so tell them they passed in an unknown item.
     if (!optionsMap.has(option)) {
@@ -116,6 +108,21 @@ export function extractOptionsFromDenoArgs(
     // track it and proceed to check if it requires a value.
     const optionObject = optionsMap.get(option)!;
     lastOptionObject = optionObject;
+
+    // If we already processed this option, then tell the user it was provided
+    // more than once. Options should only be passed in once.
+    let alreadyProcessed = false;
+    optionObject.signatures.forEach((signature: string) => {
+      if (optionsProcessed.indexOf(signature) !== -1) {
+        alreadyProcessed = true;
+      }
+    });
+
+    if (alreadyProcessed) {
+      errors.push(`Option '${optionObject.signatures.join(", ")}' was provided more than once`);
+      return;
+    }
+
     optionsProcessed.push(option);
 
     // If this option takes a value, then set the flag to say that the next
@@ -255,6 +262,7 @@ function getLastOptionIndex(denoArgs: string[], optionsMap: Map<string, IOption>
       });
 
       if (alreadyProcessed) {
+        lastOptionIndex = index;
         return;
       }
 
