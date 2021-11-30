@@ -1,7 +1,4 @@
-import { Cli } from "./cli.ts";
 import { MainCommand } from "./main_command.ts";
-import { Subcommand } from "./subcommand.ts";
-import { TOption } from "./types.ts";
 
 export interface IConstructable<T> {
   new (...args: unknown[]): T;
@@ -16,6 +13,7 @@ export interface IArgument {
 export interface IOption {
   description: string;
   signatures: string[];
+  // deno-lint-ignore camelcase
   takes_value: boolean;
   value?: boolean | string;
 }

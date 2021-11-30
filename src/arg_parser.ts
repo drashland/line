@@ -11,14 +11,12 @@ import { TArgument, TOption } from "./types.ts";
  *
  * @param denoArgs - Everything after the options in the Deno.args array.
  * @param commandName - If `run [arg]` is the signature, then `run` is the name.
- * @param commandType - Either a main command or subcommand.
  * @param commandSignature - The command's `signature` prop.
  * @param argsMap - The command's arguments Map (e.g., `#arguments_map` prop).
  */
 export function extractArgumentsFromDenoArgs(
   denoArgs: string[],
   commandName: string,
-  commandType: "command" | "subcommand",
   commandSignature: string,
   argsMap: Map<string, IArgument>,
 ): string[] {
@@ -26,10 +24,6 @@ export function extractArgumentsFromDenoArgs(
 
   // Remove the command from the signature. We only care about its arguments.
   commandSignature = commandSignature.replace(commandName, "").trim();
-
-  const argsArray = commandSignature.split(" ").map((arg: string) => {
-    return arg.replace(/\[|\]/g, ""); // Take off square brackets
-  });
 
   // Remove the command from the command line. We only care about the arguments
   // passed in.
@@ -68,21 +62,17 @@ export function extractArgumentsFromDenoArgs(
  * arguments.
  *
  * @param denoArgs - Everything after the command in the Deno.args array.
- * @param commandName - If `run [arg]` is the signature, then `run` is the name.
- * @param commandType - Either a main command or subcommand.
  * @param optionsMap - The command's options Map (e.g., `#options_map` prop).
  */
 export function extractOptionsFromDenoArgs(
   denoArgs: string[],
-  commandName: string,
-  commandType: "command" | "subcommand",
   optionsMap: Map<string, IOption>,
 ): string[] {
   const errors: string[] = [];
   const passedInOptions = getOptionsPassedIntoDenoArgs(denoArgs, optionsMap);
 
   let isValue = false;
-  let lastOptionObject: IOption|null = null;
+  let lastOptionObject: IOption | null = null;
   const optionsProcessed: string[] = [];
 
   passedInOptions.forEach((option: string) => {
@@ -119,7 +109,11 @@ export function extractOptionsFromDenoArgs(
     });
 
     if (alreadyProcessed) {
-      errors.push(`Option '${optionObject.signatures.join(", ")}' was provided more than once`);
+      errors.push(
+        `Option '${
+          optionObject.signatures.join(", ")
+        }' was provided more than once`,
+      );
       return;
     }
 
@@ -148,14 +142,12 @@ export function extractOptionsFromDenoArgs(
  *
  * @param commandSignature - The command's `signature` prop.
  * @param commandName - If `run [arg]` is the signature, then `run` is the name.
- * @param commandType - Either a main command or subcommand.
  * @param argsDescriptions - The command's argument descriptions (if any).
  * @param argsMap - The command's arguments Map (e.g., `#arguments_map` prop).
  */
 export function setArgumentsMapInitialValues(
   commandSignature: string,
   commandName: string,
-  commandType: "command" | "subcommand",
   argsDescriptions: TArgument,
   argsMap: Map<string, IArgument>,
 ): void {
@@ -185,7 +177,6 @@ export function setArgumentsMapInitialValues(
   });
 }
 
-
 /**
  * Take a command's options Map (e.g., `#options_map` prop) and set the initial
  * values of each option.
@@ -203,6 +194,7 @@ export function setOptionsMapInitialValues(
     const optionObject: IOption = {
       description: options[optionSignatures],
       signatures: [],
+      // deno-lint-ignore camelcase
       takes_value: false,
     };
 
@@ -246,7 +238,10 @@ export function setOptionsMapInitialValues(
  * @returns The index of the last option or the last option's value if it
  * requires a value.
  */
-function getLastOptionIndex(denoArgs: string[], optionsMap: Map<string, IOption>): number {
+function getLastOptionIndex(
+  denoArgs: string[],
+  optionsMap: Map<string, IOption>,
+): number {
   let lastOptionIndex = -1;
 
   const optionsProcessed: string[] = [];
@@ -272,7 +267,6 @@ function getLastOptionIndex(denoArgs: string[], optionsMap: Map<string, IOption>
       }
       optionsProcessed.push(arg);
     }
-
   });
 
   return lastOptionIndex;
@@ -291,7 +285,7 @@ function getLastOptionIndex(denoArgs: string[], optionsMap: Map<string, IOption>
  */
 function getOptionsPassedIntoDenoArgs(
   denoArgs: string[],
-  optionsMap: Map<string, IOption>
+  optionsMap: Map<string, IOption>,
 ): string[] {
   // First, we get the index of the last option (and its value if it requires
   // one)

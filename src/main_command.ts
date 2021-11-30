@@ -1,8 +1,5 @@
-import * as argParser from "./arg_parser.ts";
 import { Command } from "./command.ts";
 import { Subcommand } from "./subcommand.ts";
-import { TArgument, TOption } from "./types.ts";
-import { IArgument, IOption } from "./interfaces.ts";
 import { IConstructable } from "./interfaces.ts";
 import { colors } from "../deps.ts";
 
@@ -16,6 +13,9 @@ export class MainCommand extends Command {
    */
   public subcommands: typeof Subcommand[] = [];
 
+  /**
+   * @inheritdoc
+   */
   public type: "command" | "subcommand" = "command";
 
   /**
@@ -27,14 +27,17 @@ export class MainCommand extends Command {
   /**
    * Does this command take subcommands?
    */
-  #takes_subcommands: boolean = false;
+  #takes_subcommands = false;
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - PUBLIC METHODS //////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
 
   /**
-   * To be implemented by the user if they need it.
+   * @inheritdoc
+   *
+   * To be implemented by the user if they need it. Sometimes a main command
+   * does not need to implement this.
    */
   public handle(): void {
     return;
@@ -149,7 +152,7 @@ export class MainCommand extends Command {
       !this.#takes_subcommands
     ) {
       usage += `    ${this.name}${options}`;
-      for (const [argument, argumentObject] of this.arguments_map.entries()) {
+      for (const [argument, _argumentObject] of this.arguments_map.entries()) {
         usage += ` [arg: ${argument}]`;
       }
     }
@@ -167,7 +170,7 @@ export class MainCommand extends Command {
     ) {
       usage += `    ${this.name}${options}`;
 
-      for (const [argument, argumentObject] of this.arguments_map.entries()) {
+      for (const [argument, _argumentObject] of this.arguments_map.entries()) {
         usage += ` [arg: ${argument}]`;
       }
 
@@ -205,7 +208,7 @@ export class MainCommand extends Command {
   async #runSubcommand(input: string, denoArgs: string[]): Promise<void> {
     // If the input matches a subcommand, then let the subcommand take over
     for (
-      const [subcommand, subcommandObject] of this.#subcommands_map.entries()
+      const [_subcommand, subcommandObject] of this.#subcommands_map.entries()
     ) {
       if (input == subcommandObject.name) {
         // No args passed to the subcommand? Show how to use the subcommand.

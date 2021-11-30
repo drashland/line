@@ -1,5 +1,4 @@
 import { ICliOptions, IConstructable } from "./interfaces.ts";
-import { Subcommand } from "./subcommand.ts";
 import { MainCommand } from "./main_command.ts";
 
 /**
@@ -98,6 +97,8 @@ export class Cli {
 
   #setUpMainCommand(): void {
     this.main_command =
-      new (this.#options.command as unknown as IConstructable<MainCommand>)(this);
+      new (this.#options.command as unknown as IConstructable<MainCommand>)(
+        this,
+      );
   }
 }

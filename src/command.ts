@@ -1,48 +1,72 @@
 import * as argParser from "./arg_parser.ts";
-import { Subcommand } from "./subcommand.ts";
 import { TArgument, TOption } from "./types.ts";
 import { IArgument, IOption } from "./interfaces.ts";
-import { IConstructable } from "./interfaces.ts";
-import { colors } from "../deps.ts";
 
 /**
  * A class representing a command in the CLI.
  */
 export abstract class Command {
+  /**
+   * The types of commands that can extend this class.
+   */
   abstract type: "command" | "subcommand";
 
+  /**
+   * A key-value pair object of argument descriptions where the key is the
+   * argument and the value is the description.
+   */
   public arguments: TArgument = {};
+
+  /**
+   * This command's name.
+   */
   public name!: string;
+
+  /**
+   * A key-value pair object of options where the key is the option signature
+   * (or a comma-delimited list of signatures) and the value is the description.
+   */
   public options: TOption = {};
+
+  /**
+   * This command's signature.
+   */
   public signature!: string;
 
   /**
    * Used internally during runtime for performance and getting/checking of
    * arguments.
    */
-  public arguments_map: Map<string, IArgument> = new Map();
+  protected arguments_map: Map<string, IArgument> = new Map();
 
   /**
    * Used internally during runtime for performance and getting/checking of
    * options.
    */
-  public options_map: Map<string, IOption> = new Map();
+  protected options_map: Map<string, IOption> = new Map();
 
   /**
    * Does this command take arguments?
    */
-  public takes_arguments: boolean = false;
+  protected takes_arguments = false;
 
   /**
    * Does this command take options?
    */
-  public takes_options: boolean = false;
+  protected takes_options = false;
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - ABSTRACT METHODS ////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
 
+  /**
+   * Run this commands handler.
+   */
   abstract handle(): void;
+
+  /**
+   * Show this command's help menu.
+   */
   abstract showHelp(): void;
 
   //////////////////////////////////////////////////////////////////////////////
@@ -95,7 +119,6 @@ export abstract class Command {
     argParser.setArgumentsMapInitialValues(
       this.signature,
       this.name,
-      "command",
       this.arguments,
       this.arguments_map,
     );
@@ -163,15 +186,12 @@ export abstract class Command {
   protected validateDenoArgs(denoArgs: string[]): string[] {
     const optionsErrors = argParser.extractOptionsFromDenoArgs(
       denoArgs,
-      this.name,
-      this.type,
       this.options_map,
     );
 
     const argsErrors = argParser.extractArgumentsFromDenoArgs(
       denoArgs,
       this.name,
-      this.type,
       this.signature,
       this.arguments_map,
     );

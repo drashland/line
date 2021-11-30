@@ -1,8 +1,5 @@
-import * as argParser from "./arg_parser.ts";
 import { Command } from "./command.ts";
 import { MainCommand } from "./main_command.ts";
-import { IArgument, IOption } from "./interfaces.ts";
-import { TArgument, TOption } from "./types.ts";
 import { colors } from "../deps.ts";
 
 /**
@@ -15,8 +12,14 @@ export class Subcommand extends Command {
    */
   public main_command: MainCommand;
 
+  /**
+   * @inheritdoc
+   */
   public description = "(no description)";
 
+  /**
+   * @inheritdoc
+   */
   public type: "command" | "subcommand" = "subcommand";
 
   //////////////////////////////////////////////////////////////////////////////
@@ -54,6 +57,8 @@ export class Subcommand extends Command {
   }
 
   /**
+   * @inheritdoc
+   *
    * To be implemented by the user.
    */
   public handle(): void {

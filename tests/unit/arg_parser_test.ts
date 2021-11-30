@@ -12,8 +12,8 @@ Deno.test("ensures last option index is correctly set", () => {
         "-D",
         {
           takes_value: false,
-        }
+        },
       ],
-    )
+    ),
   );
 });
