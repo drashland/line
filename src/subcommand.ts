@@ -122,7 +122,6 @@ export abstract class Subcommand {
       this.name,
       "subcommand",
       this.#options_map,
-      this.#arguments_map.size,
     );
 
     const argsErrors = argParser.extractArgumentsFromDenoArgs(
@@ -159,6 +158,7 @@ export abstract class Subcommand {
    */
   public setUp(): void {
     this.name = this.signature.split(" ")[0];
+    this.signature = this.signature.trim();
 
     argParser.setArgumentsMapInitialValues(
       this.signature,
@@ -182,20 +182,22 @@ export abstract class Subcommand {
 
     let help = this.#getUsage();
 
-    help += "\n\nARGUMENTS\n\n";
-    for (const [argument, argumentObj] of this.#arguments_map.entries()) {
-      help += `    ${argument}\n`;
-      help += `        ${argumentObj.description}\n`;
+    if (this.#arguments_map.size > 0) {
+      help += "\n\nARGUMENTS\n";
+      for (const [argument, argumentObj] of this.#arguments_map.entries()) {
+        help += `\n    ${argument}\n`;
+        help += `        ${argumentObj.description}`;
+      }
     }
 
-    help += `\nOPTIONS\n\n`;
+    help += `\n\nOPTIONS\n\n`;
     help += `    -h, --help\n`;
     help += `        Show this menu.\n`;
 
     if (this.#options_map.size > 0) {
       for (const [option, optionObject] of this.#options_map.entries()) {
-        help += `    ${option}\n`;
-        help += `        ${optionObject.description}\n`;
+        help += `\n    ${option}\n`;
+        help += `        ${optionObject.description}`;
       }
     }
 
@@ -208,31 +210,22 @@ export abstract class Subcommand {
    * @returns The "USAGE" section.
    */
   #getUsage(): string {
-
-    const mainCommand = this.main_command.name;
-
-    const split = this.signature.split(" ");
-
     let formatted = `USAGE (for: \`${this.main_command.name} ${this.name}\`)\n\n`;
 
-    formatted += `    ${mainCommand} ${this.name} [option]
-    ${mainCommand} ${this.name} [options] `;
-
-    // Take off the subcommand so that we do not parse it when we start
-    // formatting the signature in the `.forEach()` below
-    split.shift();
-
-    split.forEach((item: string, index: number) => {
-      if (split.length == (index + 1)) {
-        formatted += `${item.replace("[", "[arg: ")}`;
-      } else {
-        // If this is not the last argument, then add a trailing space so that
-        // the next argument is not hugging up against this one
-        formatted += `${item.replace("[", "[arg: ")} `;
-      }
-    });
+    formatted += `    ${this.main_command.name} ${this.name} [option]
+    ${this.main_command.name} ${this.name} [options] ${this.#getUsageArgs()}`;
 
     return formatted;
+  }
+
+  #getUsageArgs(): string {
+    let match = this.signature.match(/\[\w+\]/g);
+    if (match) {
+      match = match.map((arg: string) => {
+        return arg.replace("[", "[arg: ");
+      });
+    }
+    return match ? match.join(" ") : "";
   }
 
   /**

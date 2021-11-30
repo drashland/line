@@ -148,7 +148,6 @@ export abstract class Command {
       this.name,
       "command",
       this.#options_map,
-      this.#arguments_map.size,
     );
 
     const argsErrors = argParser.extractArgumentsFromDenoArgs(
@@ -292,12 +291,12 @@ export abstract class Command {
     }
 
     if (this.#subcommands_map.size > 0) {
-      help += `\n\nSUBCOMMANDS\n\n`;
+      help += `\n\nSUBCOMMANDS\n`;
       for (
         const [subcommand, subcommandObject] of this.#subcommands_map.entries()
       ) {
-        help += `    ${subcommand}\n`;
-        help += `        ${subcommandObject.description}\n`;
+        help += `\n    ${subcommand}\n`;
+        help += `        ${subcommandObject.description}`;
       }
     }
 
@@ -309,8 +308,8 @@ export abstract class Command {
 
     if (this.#options_map.size > 0) {
       for (const [option, optionObject] of this.#options_map.entries()) {
-        help += `    ${option}\n`;
-        help += `        ${optionObject.description}\n`;
+        help += `\n    ${option}\n`;
+        help += `        ${optionObject.description}`;
       }
     }
 

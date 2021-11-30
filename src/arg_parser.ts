@@ -1,45 +1,19 @@
 import { IArgument, IOption } from "./interfaces.ts";
 import { TArgument, TOption } from "./types.ts";
 
-/**
- * Create the arguments Map so that it can be used during runtime. We do not
- * use `this.arguments` directly because it is just the interface that users
- * use to define their argument descriptions. The Map created in this method
- * creates an object that we can parse better during runtime.
- */
-export function setArgumentsMapInitialValues(
-  commandSignature: string,
-  commandName: string,
-  commandType: "command" | "subcommand",
-  argDescriptions: TArgument,
-  argMap: Map<string, IArgument>,
-): void {
-  // Remove the command from the signature. We only care about its arguments.
-  commandSignature = commandSignature.replace(commandName, "").trim();
-
-  const argsArray = commandSignature.split(" ").map((arg: string) => {
-    return arg.replace(/\[|\]/g, ""); // Take off square brackets
-  });
-
-  argsArray.forEach((arg: string) => {
-    // Set the description (if one exists)
-    let description = "(no description)";
-    if (arg in argDescriptions) {
-      description = argDescriptions[arg];
-    }
-
-    argMap.set(arg.trim(), {
-      description: description,
-    });
-  });
-}
+////////////////////////////////////////////////////////////////////////////////
+// FILE MARKER - EXPORTED FUNCTIONS ////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Match all of the commands's argument names to their respective arguments
  * based on location of the argument in the command line.
  *
- * @param command - The command in question that should have the command line
- * arguments matched to its signature.
+ * @param denoArgs - Everything after the options in the Deno.args array.
+ * @param commandName - If `run [arg]` is the signature, then `run` is the name.
+ * @param commandType - Either a main command or subcommand.
+ * @param commandSignature - The command's `signature` prop.
+ * @param argsMap - The command's arguments Map (e.g., `#arguments_map` prop).
  */
 export function extractArgumentsFromDenoArgs(
   denoArgs: string[],
@@ -92,84 +66,133 @@ export function extractArgumentsFromDenoArgs(
  * Take the command line and set actual values in the options Map. After setting
  * the options, take them out of the command line so it can be checked for
  * arguments.
+ *
+ * @param denoArgs - Everything after the command in the Deno.args array.
+ * @param commandName - If `run [arg]` is the signature, then `run` is the name.
+ * @param commandType - Either a main command or subcommand.
+ * @param optionsMap - The command's options Map (e.g., `#options_map` prop).
  */
 export function extractOptionsFromDenoArgs(
   denoArgs: string[],
   commandName: string,
   commandType: "command" | "subcommand",
   optionsMap: Map<string, IOption>,
-  numCommandArguments: number,
 ): string[] {
   const errors: string[] = [];
+  const passedInOptions = getOptionsPassedIntoDenoArgs(denoArgs, optionsMap);
 
-  // Make a copy of the Deno args array to work with. We will use this to
-  // iterate over the array and mutate the original array during iteration.
-  const denoArgsCopy = denoArgs.slice();
-  denoArgsCopy.splice(
-    denoArgsCopy.length - numCommandArguments,
-    numCommandArguments,
-  );
+  let isValue = false;
+  let lastOptionObject: IOption|null = null;
+  const optionsProcessed: string[] = [];
 
-  let optionsExtracted: IOption[] = [];
-
-  let lastOptionProcessed: IOption;
-  let lastOptionProcessedName: null | string = null;
-
-  denoArgsCopy.forEach((arg: string, index: number) => {
-    // If this argument has already been processed, then that means we are
-    // processing a duplicate. This is an error.
-    optionsExtracted.forEach((optionExtracted: IOption) => {
-      optionExtracted.signatures.forEach((signature: string) => {
-        if (arg == signature) {
-          errors.push(`Option '${arg}' was provided more than once.`);
-        }
-      });
-    });
-
-    // If the last option processed takes in a value ...
-    if (lastOptionProcessed && lastOptionProcessed.takes_value) {
-      // ... then this current arg is the value. Also, we only assign the value
-      // to the option if the value explicitly has an `undefined` value.
-      // `undefined` means that the value has not been set yet.
-      if (lastOptionProcessed.value === undefined) {
-        lastOptionProcessed.value = arg;
-        denoArgs.splice(denoArgs.indexOf(arg), 1);
-      }
+  passedInOptions.forEach((option: string) => {
+    // If this option is a value, then set it on the last option that was
+    // processed
+    if (lastOptionObject && isValue) {
+      lastOptionObject.value = option;
+      // Reset the variables used to set values on a last option processed
+      lastOptionObject = null;
+      isValue = false;
       return;
     }
 
-    if (optionsMap.has(arg)) {
-      lastOptionProcessed = optionsMap.get(arg)!;
-      // If the option does not take in a value, but it is an option in this
-      // CLI, then we just set the value to true to say, "Yes, this option
-      // exists and it has been passed into the command line."
-      if (!lastOptionProcessed.takes_value) {
-        lastOptionProcessed.value = true;
-      }
-      lastOptionProcessedName = arg;
-      denoArgs.splice(denoArgs.indexOf(arg), 1);
-      optionsExtracted.push(lastOptionProcessed);
+    // If we already processed this option, then tell the user it was provided
+    // more than once. Options should only be passed in once.
+    if (optionsProcessed.indexOf(option) !== -1) {
+      optionsProcessed.push(option);
+      errors.push(`Option '${option}' was provided more than once`);
       return;
     }
 
-    errors.push(
-      `Option '${lastOptionProcessedName}' does not take in a value. '${arg}' was provided.`,
-    );
-    denoArgs.splice(denoArgs.indexOf(arg), 1);
+    // If this option is not in the options map, then we have no idea what it
+    // is. The user made a mistake, so tell them they passed in an unknown item.
+    if (!optionsMap.has(option)) {
+      optionsProcessed.push(option);
+      errors.push(`Unknown item '${option}' provided`);
+      return;
+    }
+
+    // If we get here, then we have an option that is defined in this CLI. Let's
+    // track it and proceed to check if it requires a value.
+    const optionObject = optionsMap.get(option)!;
+    lastOptionObject = optionObject;
+    optionsProcessed.push(option);
+
+    // If this option takes a value, then set the flag to say that the next
+    // option is the value
+    if (optionObject.takes_value) {
+      isValue = true;
+      return;
+    }
+
+    // If we get here, then the option currently being processed does not
+    // require a value. It just needs to "exist" in the command line, so we set
+    // its value to true. We set it to true so when `this.option("option")` is
+    // called from the command or subcommand class, it evalutes to true.
+    lastOptionObject.value = true;
   });
 
   return errors;
 }
 
 /**
- * Set the initial values of the options Map.
+ * Take a command's arguments Map (e.g., `#argumens_map` prop) and set the
+ * initial values of each argument.
+ *
+ * @param commandSignature - The command's `signature` prop.
+ * @param commandName - If `run [arg]` is the signature, then `run` is the name.
+ * @param commandType - Either a main command or subcommand.
+ * @param argsDescriptions - The command's argument descriptions (if any).
+ * @param argsMap - The command's arguments Map (e.g., `#arguments_map` prop).
+ */
+export function setArgumentsMapInitialValues(
+  commandSignature: string,
+  commandName: string,
+  commandType: "command" | "subcommand",
+  argsDescriptions: TArgument,
+  argsMap: Map<string, IArgument>,
+): void {
+  // Remove the command from the signature. We only care about its arguments.
+  commandSignature = commandSignature.replace(commandName, "").trim();
+
+  // If the command does not take in any arguments, then we can skip this entire
+  // process
+  if (commandSignature.length === 0) {
+    return;
+  }
+
+  const argsArray = commandSignature.split(" ").map((arg: string) => {
+    return arg.replace(/\[|\]/g, ""); // Take off square brackets
+  });
+
+  argsArray.forEach((arg: string) => {
+    // Set the description (if one exists)
+    let description = "(no description)";
+    if (arg in argsDescriptions) {
+      description = argsDescriptions[arg];
+    }
+
+    argsMap.set(arg.trim(), {
+      description: description,
+    });
+  });
+}
+
+
+/**
+ * Take a command's options Map (e.g., `#options_map` prop) and set the initial
+ * values of each option.
+ *
+ * @param options - The command's `options` prop.
+ * @param optionsMap - The command's options Map (e.g., `#options_map` prop).
  */
 export function setOptionsMapInitialValues(
   options: TOption,
   optionsMap: Map<string, IOption>,
 ): void {
-  // Create the options map
   for (const optionSignatures in options) {
+    // Create the option object that get stored in the options Map. This will be
+    // mutated down below if needed.
     const optionObject: IOption = {
       description: options[optionSignatures],
       signatures: [],
@@ -177,41 +200,97 @@ export function setOptionsMapInitialValues(
     };
 
     // The key in the `options` property can be a command-delimited list of
-    // options, so we split on the commad just in case it is a comma-delimited
-    // list
+    // option signatures, so we split the list apart in case it is.
     const split = optionSignatures.split(",");
+
     // For each option signature specified ...
     split.forEach((signature: string) => {
-      // ... trim leading/trailing spaces that might be in the signature
+      // ... trim leading/trailing spaces that might be in the signature ...
       signature = signature.trim();
 
-      // ... check to see if this option takes in a value
+      // ... and check to see if it takes in a value
       if (signature.includes("[value]")) {
-        // If it does take in a value, then take out the `[value]` portion of
-        // the signature. We do not need this when creating the options Map.
+        // If it takes in a value, then remove the `[value]` portion ...
         signature = signature.replace(/\s+\[value\]/, "").trim();
+        // ... and set the option object's `takes_value` flag to true
         optionObject.takes_value = true;
       }
 
+      // Once done, add all signatures that this option has ...
       optionObject.signatures.push(signature);
+      // ... and set this option -- identifiable by signature -- in the
+      // command's options Map
       optionsMap.set(signature, optionObject);
     });
   }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// FILE MARKER - LOCAL FUNCTIONS ///////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 /**
- * Has the specified option been extracted from the command line?
+ * Get the last option's index (or the index of its value if it requires a
+ * value).
+ *
+ * @param denoArgs - The Deno.args array.
+ * @param optionsMap - The command's options Map (e.g., `#options_map` prop).
+ *
+ * @returns The index of the last option or the last option's value if it
+ * requires a value.
  */
-function optionAlreadyExtracted(
-  optionName: string,
-  optionsExtracted: IOption[],
-) {
-  let extracted = false;
-  optionsExtracted.forEach((optionExtracted: IOption) => {
-    if (optionExtracted.signatures.indexOf(optionName) !== -1) {
-      extracted = true;
+function getLastOptionIndex(denoArgs: string[], optionsMap: Map<string, IOption>): number {
+  let lastOptionIndex = -1;
+
+  const optionsProcessed: string[] = [];
+
+  denoArgs.forEach((arg: string, index: number) => {
+    if (optionsMap.has(arg)) {
+      const option = optionsMap.get(arg)!;
+      let alreadyProcessed = false;
+      option.signatures.forEach((signature: string) => {
+        if (optionsProcessed.indexOf(signature) !== -1) {
+          alreadyProcessed = true;
+        }
+      });
+
+      if (alreadyProcessed) {
+        return;
+      }
+
+      lastOptionIndex = index;
+      if (optionsMap.get(arg)!.takes_value) {
+        lastOptionIndex = index + 1;
+      }
+      optionsProcessed.push(arg);
     }
+
   });
 
-  return extracted;
+  return lastOptionIndex;
+}
+
+/**
+ * Get all of the options that were passed in. We do this by checking what the
+ * last option is in the command line. Once we have the last option, we take
+ * everything from the beginning of the command line to the last option (and its
+ * value if it requires a value) and return it.
+ *
+ * @param denoArgs - The Deno.args array.
+ * @param optionsMap - The command's options Map (e.g., `#options_map` prop).
+ *
+ * @returns All options that were passed in the Deno.args array.
+ */
+function getOptionsPassedIntoDenoArgs(
+  denoArgs: string[],
+  optionsMap: Map<string, IOption>
+): string[] {
+  // First, we get the index of the last option (and its value if it requires
+  // one)
+  const lastOptionIndex = getLastOptionIndex(denoArgs, optionsMap);
+
+  // Next, we splice Deno.args from the beginning til the last option (and its
+  // value if it requires one). We want to include the last option (and its
+  // value if it requires one) so we add `+ 1`.
+  return denoArgs.splice(0, lastOptionIndex + 1);
 }
