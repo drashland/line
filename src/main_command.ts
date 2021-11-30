@@ -16,6 +16,8 @@ export class MainCommand extends Command {
    */
   public subcommands: typeof Subcommand[] = [];
 
+  public type: "command" | "subcommand" = "command";
+
   /**
    * Used internally during runtime for performance and getting/checking/running
    * subcommands.
@@ -40,6 +42,8 @@ export class MainCommand extends Command {
 
   /**
    * Run this command.
+   *
+   * @param input - The `Deno.args[0]` value.
    */
   public async run(input: string): Promise<void> {
     const denoArgs = Deno.args.slice();
@@ -53,47 +57,9 @@ export class MainCommand extends Command {
       Deno.exit(1);
     }
 
-    // If the input matches a subcommand, then let the subcommand take over
-    for (
-      const [subcommand, subcommandObject] of this.#subcommands_map.entries()
-    ) {
-      if (input == subcommandObject.name) {
-        // No args passed to the subcommand? Show how to use the subcommand.
-        if (!denoArgs[1]) {
-          subcommandObject.showHelp();
-          Deno.exit(1);
-        }
+    await this.#runSubcommand(input, denoArgs);
 
-        // Show the subcommands help menu?
-        if (
-          denoArgs.indexOf("-h") !== -1 ||
-          denoArgs.indexOf("--help") !== -1
-        ) {
-          subcommandObject.showHelp();
-          Deno.exit(0);
-        }
-
-        await subcommandObject.run();
-      }
-    }
-
-    const optionsErrors = argParser.extractOptionsFromDenoArgs(
-      denoArgs,
-      this.name,
-      "command",
-      this.options_map,
-    );
-
-    const argsErrors = argParser.extractArgumentsFromDenoArgs(
-      denoArgs,
-      this.name,
-      "command",
-      this.signature,
-      this.arguments_map,
-    );
-
-    // Combine all the errors and remove any duplicates
-    const errors = [...new Set(optionsErrors.concat(argsErrors))].sort();
+    const errors = super.validateDenoArgs(denoArgs);
 
     if (errors.length > 0) {
       let errorString = "";
@@ -228,5 +194,38 @@ export class MainCommand extends Command {
         subcommandObj,
       );
     });
+  }
+
+  /**
+   * Run the given subcommand (if it exists).
+   *
+   * @param input - The input from Deno.args.
+   * @param denoArgs - The Deno.args array.
+   */
+  async #runSubcommand(input: string, denoArgs: string[]): Promise<void> {
+    // If the input matches a subcommand, then let the subcommand take over
+    for (
+      const [subcommand, subcommandObject] of this.#subcommands_map.entries()
+    ) {
+      if (input == subcommandObject.name) {
+        // No args passed to the subcommand? Show how to use the subcommand.
+        if (!denoArgs[1]) {
+          subcommandObject.showHelp();
+          Deno.exit(1);
+        }
+
+        // Show the subcommands help menu?
+        if (
+          denoArgs.indexOf("-h") !== -1 ||
+          denoArgs.indexOf("--help") !== -1
+        ) {
+          subcommandObject.showHelp();
+          Deno.exit(0);
+        }
+
+        await subcommandObject.run();
+        Deno.exit(0);
+      }
+    }
   }
 }

@@ -17,6 +17,8 @@ export class Subcommand extends Command {
 
   public description = "(no description)";
 
+  public type: "command" | "subcommand" = "subcommand";
+
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
@@ -87,23 +89,7 @@ export class Subcommand extends Command {
     const commandIndex = denoArgs.indexOf(this.name);
     denoArgs = denoArgs.slice(commandIndex + 1, denoArgs.length);
 
-    const optionsErrors = argParser.extractOptionsFromDenoArgs(
-      denoArgs,
-      this.name,
-      "subcommand",
-      this.options_map,
-    );
-
-    const argsErrors = argParser.extractArgumentsFromDenoArgs(
-      denoArgs,
-      this.name,
-      "subcommand",
-      this.signature,
-      this.arguments_map,
-    );
-
-    // Combine all the errors and remove any duplicates
-    const errors = [...new Set(optionsErrors.concat(argsErrors))].sort();
+    const errors = super.validateDenoArgs(denoArgs);
 
     if (errors.length > 0) {
       let errorString = "";

@@ -9,6 +9,8 @@ import { colors } from "../deps.ts";
  * A class representing a command in the CLI.
  */
 export abstract class Command {
+  abstract type: "command" | "subcommand";
+
   public arguments: TArgument = {};
   public name!: string;
   public options: TOption = {};
@@ -84,7 +86,7 @@ export abstract class Command {
   }
 
   /**
-   * Set up this main comman.
+   * Set up this command.
    */
   public setUp(): void {
     this.name = this.signature.split(" ")[0];
@@ -108,9 +110,9 @@ export abstract class Command {
   }
 
   /**
-   * Get the help menu "ARGUMENTS" section.
+   * Get the help menu "ARGUMENTS" section for this command.
    *
-   * @returns The help menu "ARGUMENTS" section.
+   * @returns The help menu "ARGUMENTS" section for this command.
    */
   public getHelpMenuArguments(): string {
     let help = "";
@@ -126,6 +128,11 @@ export abstract class Command {
     return help;
   }
 
+  /**
+   * Get the help menu "OPTIONS" section for this command.
+   *
+   * @returns The help menu "OPTIONS" section for this command.
+   */
   public getHelpMenuOptions(): string {
     let help = `\n\nOPTIONS\n\n`;
     help += `    -h, --help\n`;
@@ -151,5 +158,25 @@ export abstract class Command {
     }
 
     return help;
+  }
+
+  protected validateDenoArgs(denoArgs: string[]): string[] {
+    const optionsErrors = argParser.extractOptionsFromDenoArgs(
+      denoArgs,
+      this.name,
+      this.type,
+      this.options_map,
+    );
+
+    const argsErrors = argParser.extractArgumentsFromDenoArgs(
+      denoArgs,
+      this.name,
+      this.type,
+      this.signature,
+      this.arguments_map,
+    );
+
+    // Combine all the errors and remove any duplicates
+    return [...new Set(optionsErrors.concat(argsErrors))].sort();
   }
 }
