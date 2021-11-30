@@ -25,17 +25,15 @@ export abstract class Command {
    */
   public subcommands: typeof Line.Subcommand[] = [];
 
-  public cli: Line.Cli;
-
   public arguments: TArgument = {};
 
   public name!: string;
 
   public options: TOption = {};
 
-  public takes_arguments: boolean = false;
-  public takes_options: boolean = false;
-  public takes_subcommands: boolean = false;
+  #takes_arguments: boolean = false;
+  #takes_options: boolean = false;
+  #takes_subcommands: boolean = false;
 
   /**
    * Used internally during runtime for performance and getting/checking of
@@ -58,10 +56,6 @@ export abstract class Command {
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
-
-  constructor(cli: Line.Cli) {
-    this.cli = cli;
-  }
 
   public handle(): void {
     return;
@@ -112,7 +106,7 @@ export abstract class Command {
 
     // If this command takes in arguments, then we expect one to be specified
     if (
-      (this.takes_arguments || this.#subcommands_map.size > 0) &&
+      (this.#takes_arguments || this.#subcommands_map.size > 0) &&
       (denoArgs.length <= 0)
     ) {
       this.showHelp();
@@ -170,7 +164,7 @@ export abstract class Command {
         colors.red(`[ERROR] `) +
           `Command '${this.name}' used incorrectly. Error(s) found:\n${errorString}\n`,
       );
-      console.log(this.#getUsage());
+      console.log(this.#getHelpMenuUsage());
       Deno.exit(1);
     }
 
@@ -206,6 +200,7 @@ export abstract class Command {
    */
   public setUp(): void {
     this.name = this.signature.split(" ")[0];
+    this.signature = this.signature.trim();
 
     this.#setUpSubcommands();
 
@@ -222,30 +217,24 @@ export abstract class Command {
       this.#options_map,
     );
 
-    if (this.#subcommands_map.size > 0) {
-      this.takes_subcommands = true;
-    }
-    if (this.#arguments_map.size > 0) {
-      this.takes_arguments = true;
-    }
-    if (this.#options_map.size > 0) {
-      this.takes_options = true;
-    }
+    this.#takes_subcommands = this.#subcommands_map.size > 0;
+    this.#takes_arguments = this.#arguments_map.size > 0;
+    this.#takes_options = this.#options_map.size > 0;
   }
 
-  #getUsage(): string {
+  #getHelpMenuUsage(): string {
     let usage = `USAGE\n\n`;
 
     usage += `    ${this.name} [option]\n`;
     let options = "";
 
-    if (this.takes_options) {
+    if (this.#takes_options) {
       options = " [options]";
     }
 
     if (
-      this.takes_arguments &&
-      !this.takes_subcommands
+      this.#takes_arguments &&
+      !this.#takes_subcommands
     ) {
       usage += `    ${this.name}${options}`;
       for (const [argument, argumentObject] of this.#arguments_map.entries()) {
@@ -254,15 +243,15 @@ export abstract class Command {
     }
 
     if (
-      this.takes_subcommands &&
-      !this.takes_arguments
+      this.#takes_subcommands &&
+      !this.#takes_arguments
     ) {
       usage += `    ${this.name} [subcommand]`;
     }
 
     if (
-      this.takes_arguments &&
-      this.takes_subcommands
+      this.#takes_arguments &&
+      this.#takes_subcommands
     ) {
       usage += `    ${this.name}${options}`;
 
@@ -280,17 +269,64 @@ export abstract class Command {
    * Show this CLI's help menu.
    */
   public showHelp(): void {
-    let help = this.#getUsage();
+    let help = this.#getHelpMenuUsage();
 
-    if (this.takes_arguments) {
-      help += `\n\nARGUMENTS\n\n`;
+    help += this.#getHelpMenuArguments();
+    help += this.#getHelpMenuSubcommands();
+    help += this.#getHelpMenuOptions();
+
+    console.log(help);
+  }
+
+  #getCommandName(): string {
+    return this.signature.split(" ")[0];
+  }
+
+  /**
+   * Get the help menu "ARGUMENTS" section.
+   *
+   * @returns The help menu "ARGUMENTS" section.
+   */
+  #getHelpMenuArguments(): string {
+    let help = "";
+
+    if (this.#takes_arguments) {
+      help += `\n\nARGUMENTS\n`;
       for (const [argument, argumentObject] of this.#arguments_map.entries()) {
-        help += `    ${argument}\n`;
-        help += `        ${argumentObject.description}\n`;
+        help += `\n    ${argument}\n`;
+        help += `        ${argumentObject.description}`;
       }
     }
 
-    if (this.#subcommands_map.size > 0) {
+    return help;
+  }
+
+  #getHelpMenuOptions(): string {
+    let help = `\n\nOPTIONS\n\n`;
+    help += `    -h, --help\n`;
+    help += `        Show this menu.\n`;
+    help += `    -v, --version\n`;
+    help += `        Show this CLI's version.\n`;
+
+    if (this.#takes_options) {
+      for (const [option, optionObject] of this.#options_map.entries()) {
+        help += `\n    ${option}\n`;
+        help += `        ${optionObject.description}`;
+      }
+    }
+
+    return help;
+  }
+
+  /**
+   * Get the help menu "SUBCOMMANDS" section.
+   *
+   * @returns The help menu "SUBCOMMANDS" section.
+   */
+  #getHelpMenuSubcommands(): string {
+    let help = "";
+
+    if (this.#takes_subcommands) {
       help += `\n\nSUBCOMMANDS\n`;
       for (
         const [subcommand, subcommandObject] of this.#subcommands_map.entries()
@@ -300,23 +336,6 @@ export abstract class Command {
       }
     }
 
-    help += `\n\nOPTIONS\n\n`;
-    help += `    -h, --help\n`;
-    help += `        Show this menu.\n`;
-    help += `    -v, --version\n`;
-    help += `        Show this CLI's version.\n`;
-
-    if (this.#options_map.size > 0) {
-      for (const [option, optionObject] of this.#options_map.entries()) {
-        help += `\n    ${option}\n`;
-        help += `        ${optionObject.description}`;
-      }
-    }
-
-    console.log(help);
-  }
-
-  #getCommandName(): string {
-    return this.signature.split(" ")[0];
+    return help;
   }
 }

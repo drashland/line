@@ -32,6 +32,9 @@ export abstract class Subcommand {
 
   public name!: string;
 
+  #takes_arguments: boolean = false;
+  #takes_options: boolean = false;
+
   /**
    * See Line.Cli.
    */
@@ -144,7 +147,7 @@ export abstract class Subcommand {
         colors.red(`[ERROR] `) +
           `Subcommand '${this.name}' used incorrectly. Error(s) found:\n${errorString}\n`,
       );
-      console.log(this.#getUsage());
+      console.log(this.#getHelpMenuUsage());
       Deno.exit(1);
     }
 
@@ -172,53 +175,38 @@ export abstract class Subcommand {
       this.options,
       this.#options_map,
     );
+
+    this.#takes_arguments = this.#arguments_map.size > 0;
+    this.#takes_options = this.#options_map.size > 0;
   }
 
   /**
    * Show this subcommand's help menu.
    */
   public showHelp(): void {
-    const subcommand = this.name;
+    let help = this.#getHelpMenuUsage();
 
-    let help = this.#getUsage();
-
-    if (this.#arguments_map.size > 0) {
-      help += "\n\nARGUMENTS\n";
-      for (const [argument, argumentObj] of this.#arguments_map.entries()) {
-        help += `\n    ${argument}\n`;
-        help += `        ${argumentObj.description}`;
-      }
-    }
-
-    help += `\n\nOPTIONS\n\n`;
-    help += `    -h, --help\n`;
-    help += `        Show this menu.\n`;
-
-    if (this.#options_map.size > 0) {
-      for (const [option, optionObject] of this.#options_map.entries()) {
-        help += `\n    ${option}\n`;
-        help += `        ${optionObject.description}`;
-      }
-    }
+    help += this.#getHelpMenuArguments();
+    help += this.#getHelpMenuOptions();
 
     console.log(help);
   }
 
   /**
-   * Get the "USAGE" section for the help menu.
+   * Get the help menu "USAGE" section.
    *
-   * @returns The "USAGE" section.
+   * @returns The help menu "USAGE" section.
    */
-  #getUsage(): string {
+  #getHelpMenuUsage(): string {
     let formatted = `USAGE (for: \`${this.main_command.name} ${this.name}\`)\n\n`;
 
     formatted += `    ${this.main_command.name} ${this.name} [option]
-    ${this.main_command.name} ${this.name} [options] ${this.#getUsageArgs()}`;
+    ${this.main_command.name} ${this.name} [options] ${this.#getHelpMenuUsageArgs()}`;
 
     return formatted;
   }
 
-  #getUsageArgs(): string {
+  #getHelpMenuUsageArgs(): string {
     let match = this.signature.match(/\[\w+\]/g);
     if (match) {
       match = match.map((arg: string) => {
@@ -226,6 +214,42 @@ export abstract class Subcommand {
       });
     }
     return match ? match.join(" ") : "";
+  }
+
+  /**
+   * Get the help menu "ARGUMENTS" section.
+   *
+   * @returns The help menu "ARGUMENTS" section.
+   */
+  #getHelpMenuArguments(): string {
+    let help = "";
+
+    if (this.#takes_arguments) {
+      help += `\n\nARGUMENTS\n`;
+      for (const [argument, argumentObject] of this.#arguments_map.entries()) {
+        help += `\n    ${argument}\n`;
+        help += `        ${argumentObject.description}`;
+      }
+    }
+
+    return help;
+  }
+
+  #getHelpMenuOptions(): string {
+    let help = `\n\nOPTIONS\n\n`;
+    help += `    -h, --help\n`;
+    help += `        Show this menu.\n`;
+    help += `    -v, --version\n`;
+    help += `        Show this CLI's version.\n`;
+
+    if (this.#takes_options) {
+      for (const [option, optionObject] of this.#options_map.entries()) {
+        help += `\n    ${option}\n`;
+        help += `        ${optionObject.description}`;
+      }
+    }
+
+    return help;
   }
 
   /**
