@@ -1,4 +1,5 @@
 import * as argParser from "./arg_parser.ts";
+import { Command } from "./command.ts";
 import { MainCommand } from "./main_command.ts";
 import { IArgument, IOption } from "./interfaces.ts";
 import { TArgument, TOption } from "./types.ts";
@@ -8,48 +9,13 @@ import { colors } from "../deps.ts";
  * This class represents a subcommand. It can only be executed by the main
  * command.
  */
-export abstract class Subcommand {
-  /**
-   * This subcommand's signature. For example, `copy [source] [destination]`.
-   */
-  public signature!: string;
-
-  /**
-   * This subcommand's description.
-   */
-  public description!: string;
-
-  /**
-   * This subcommand's options.
-   */
-  public options: TOption = {};
-
-  /**
-   * This subcommand's argument descriptions.
-   */
-  public arguments: TArgument = {};
-
-  public name!: string;
-
-  #takes_arguments: boolean = false;
-  #takes_options: boolean = false;
-
+export class Subcommand extends Command {
   /**
    * See MainCommand.
    */
   public main_command: MainCommand;
 
-  /**
-   * Used internally during runtime for performance and getting/checking of
-   * arguments.
-   */
-  #arguments_map: Map<string, IArgument> = new Map();
-
-  /**
-   * Used internally during runtime for performance and getting/checking of
-   * options.
-   */
-  #options_map: Map<string, IOption> = new Map();
+  public description = "(no description)";
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
@@ -59,14 +25,9 @@ export abstract class Subcommand {
    * @param mainCommand - See MainCommand.
    */
   constructor(mainCommand: MainCommand) {
+    super();
     this.main_command = mainCommand;
   }
-
-  //////////////////////////////////////////////////////////////////////////////
-  // FILE MARKER - ABSTRACT METHODS ////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////////
-
-  public abstract handle(): void;
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - PUBLIC METHODS //////////////////////////////////////////////
@@ -81,13 +42,20 @@ export abstract class Subcommand {
    * argument does not exist.
    */
   public argument(argumentName: string): string | undefined {
-    const argumentObject = this.#arguments_map.get(argumentName);
+    const argumentObject = this.arguments_map.get(argumentName);
 
     if (argumentObject) {
       return argumentObject.value;
     }
 
     return undefined;
+  }
+
+  /**
+   * To be implemented by the user.
+   */
+  public handle(): void {
+    return;
   }
 
   /**
@@ -99,7 +67,7 @@ export abstract class Subcommand {
    * option does not exist.
    */
   public option(optionName: string): string | boolean | undefined {
-    const optionObject = this.#options_map.get(optionName);
+    const optionObject = this.options_map.get(optionName);
 
     if (optionObject) {
       return optionObject.value;
@@ -123,7 +91,7 @@ export abstract class Subcommand {
       denoArgs,
       this.name,
       "subcommand",
-      this.#options_map,
+      this.options_map,
     );
 
     const argsErrors = argParser.extractArgumentsFromDenoArgs(
@@ -131,7 +99,7 @@ export abstract class Subcommand {
       this.name,
       "subcommand",
       this.signature,
-      this.#arguments_map,
+      this.arguments_map,
     );
 
     // Combine all the errors and remove any duplicates
@@ -156,37 +124,12 @@ export abstract class Subcommand {
   }
 
   /**
-   * Set up this subcommand so it can be used during runtime.
-   */
-  public setUp(): void {
-    this.name = this.signature.split(" ")[0];
-    this.signature = this.signature.trim();
-
-    argParser.setArgumentsMapInitialValues(
-      this.signature,
-      this.name,
-      "subcommand",
-      this.arguments,
-      this.#arguments_map,
-    );
-
-    argParser.setOptionsMapInitialValues(
-      this.options,
-      this.#options_map,
-    );
-
-    this.#takes_arguments = this.#arguments_map.size > 0;
-    this.#takes_options = this.#options_map.size > 0;
-  }
-
-  /**
    * Show this subcommand's help menu.
    */
   public showHelp(): void {
     let help = this.#getHelpMenuUsage();
-
-    help += this.#getHelpMenuArguments();
-    help += this.#getHelpMenuOptions();
+    help += this.getHelpMenuArguments();
+    help += this.getHelpMenuOptions();
 
     console.log(help);
   }
@@ -205,6 +148,11 @@ export abstract class Subcommand {
     return help;
   }
 
+  /**
+   * Get the help menu "USAGE" section arguments.
+   *
+   * @returns The help menu "USAGE" section arguments.
+   */
   #getHelpMenuUsageArgs(): string {
     let match = this.signature.match(/\[\w+\]/g);
     if (match) {
@@ -213,62 +161,5 @@ export abstract class Subcommand {
       });
     }
     return match ? match.join(" ") : "";
-  }
-
-  /**
-   * Get the help menu "ARGUMENTS" section.
-   *
-   * @returns The help menu "ARGUMENTS" section.
-   */
-  #getHelpMenuArguments(): string {
-    let help = "";
-
-    if (this.#takes_arguments) {
-      help += `\n\nARGUMENTS\n`;
-      for (const [argument, argumentObject] of this.#arguments_map.entries()) {
-        help += `\n    ${argument}\n`;
-        help += `        ${argumentObject.description}`;
-      }
-    }
-
-    return help;
-  }
-
-  #getHelpMenuOptions(): string {
-    let help = `\n\nOPTIONS\n\n`;
-    help += `    -h, --help\n`;
-    help += `        Show this menu.\n`;
-    help += `    -v, --version\n`;
-    help += `        Show this CLI's version.\n`;
-
-    if (this.#takes_options) {
-      for (const [option, optionObject] of this.#options_map.entries()) {
-        help += `\n    ${option}\n`;
-        help += `        ${optionObject.description}`;
-      }
-    }
-
-    return help;
-  }
-
-  /**
-   * Format the options for help menu purposes.
-   *
-   * @returns The formatted options.
-   */
-  #formatOptions(options: string): string {
-    let formatted = "";
-
-    const split = options.split(",");
-
-    split.forEach((option: string, index: number) => {
-      if (split.length == (index + 1)) {
-        formatted += `${option.trim()}`;
-      } else {
-        formatted += `${option.trim()}, `;
-      }
-    });
-
-    return formatted;
   }
 }
