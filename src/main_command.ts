@@ -1,4 +1,3 @@
-import * as Line from "../mod.ts";
 import * as argParser from "./arg_parser.ts";
 import { Subcommand } from "./subcommand.ts";
 import { TArgument, TOption } from "./types.ts";
@@ -9,31 +8,12 @@ import { colors } from "../deps.ts";
 /**
  * The main command of the CLI.
  */
-export abstract class Command {
-  /**
-   * The main command that is used on the command line. For example, in the
-   * following command line ...
-   *
-   *   `deno run -A app.ts`
-   *
-   * ... the `deno` part is the main command.
-   */
-  abstract signature: string;
-
-  /**
-   * An array of subcommands that this main command can execute.
-   */
-  public subcommands: typeof Line.Subcommand[] = [];
-
+export class MainCommand {
   public arguments: TArgument = {};
-
   public name!: string;
-
   public options: TOption = {};
-
-  #takes_arguments: boolean = false;
-  #takes_options: boolean = false;
-  #takes_subcommands: boolean = false;
+  public signature!: string;
+  public subcommands: typeof Subcommand[] = [];
 
   /**
    * Used internally during runtime for performance and getting/checking of
@@ -52,6 +32,10 @@ export abstract class Command {
    * options.
    */
   #subcommands_map: Map<string, Subcommand> = new Map();
+
+  #takes_arguments: boolean = false;
+  #takes_options: boolean = false;
+  #takes_subcommands: boolean = false;
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////

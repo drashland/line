@@ -1,15 +1,15 @@
-import { ICliOptions, ICommand, IConstructable } from "./interfaces.ts";
+import { ICliOptions, IConstructable } from "./interfaces.ts";
 import { Subcommand } from "./subcommand.ts";
-import { Command } from "./command.ts";
+import { MainCommand } from "./main_command.ts";
 
 /**
  * A class to help build CLIs.
  */
 export class Cli {
   /**
-   * See Command.
+   * See MainCommand.
    */
-  public main_command!: Command;
+  public main_command!: MainCommand;
 
   /**
    * This CLI's description.
@@ -27,10 +27,8 @@ export class Cli {
   public version: string;
 
   /**
-   * All of the subcommands from the main command, but instantiated.
+   * See ICliOptions.
    */
-  #subcommands: Subcommand[] = [];
-
   #options: ICliOptions;
 
   //////////////////////////////////////////////////////////////////////////////
@@ -100,6 +98,6 @@ export class Cli {
 
   #setUpMainCommand(): void {
     this.main_command =
-      new (this.#options.command as unknown as IConstructable<Command>)(this);
+      new (this.#options.command as unknown as IConstructable<MainCommand>)(this);
   }
 }

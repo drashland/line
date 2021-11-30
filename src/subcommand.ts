@@ -1,6 +1,5 @@
-import * as Line from "../mod.ts";
 import * as argParser from "./arg_parser.ts";
-import { Command } from "./command.ts";
+import { MainCommand } from "./main_command.ts";
 import { IArgument, IOption } from "./interfaces.ts";
 import { TArgument, TOption } from "./types.ts";
 import { colors } from "../deps.ts";
@@ -36,9 +35,9 @@ export abstract class Subcommand {
   #takes_options: boolean = false;
 
   /**
-   * See Line.Cli.
+   * See MainCommand.
    */
-  public main_command: Command;
+  public main_command: MainCommand;
 
   /**
    * Used internally during runtime for performance and getting/checking of
@@ -57,9 +56,9 @@ export abstract class Subcommand {
   //////////////////////////////////////////////////////////////////////////////
 
   /**
-   * @param cli - See Line.Cli.
+   * @param mainCommand - See MainCommand.
    */
-  constructor(mainCommand: Command) {
+  constructor(mainCommand: MainCommand) {
     this.main_command = mainCommand;
   }
 
@@ -198,12 +197,12 @@ export abstract class Subcommand {
    * @returns The help menu "USAGE" section.
    */
   #getHelpMenuUsage(): string {
-    let formatted = `USAGE (for: \`${this.main_command.name} ${this.name}\`)\n\n`;
+    let help = `USAGE (for: \`${this.main_command.name} ${this.name}\`)\n\n`;
 
-    formatted += `    ${this.main_command.name} ${this.name} [option]
+    help += `    ${this.main_command.name} ${this.name} [option]
     ${this.main_command.name} ${this.name} [options] ${this.#getHelpMenuUsageArgs()}`;
 
-    return formatted;
+    return help;
   }
 
   #getHelpMenuUsageArgs(): string {
