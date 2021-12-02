@@ -41,14 +41,14 @@ export function assertOutput(
   if (writeExpectedFile) {
     Deno.writeFileSync(
       expectedFileLocation,
-      encoder.encode(actual)
+      encoder.encode(actual),
     );
   }
 
   asserts.assertEquals(
     actual.trim(), // We trim because counting new lines sucks
     decoder.decode(Deno.readFileSync(
-      expectedFileLocation
-    )).trim() // We trim because counting new lines sucks
+      expectedFileLocation,
+    )).trim(), // We trim because counting new lines sucks
   );
 }

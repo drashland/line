@@ -1,19 +1,21 @@
 import { asserts } from "../../deps.ts";
 import {
+  assertOutput as assertOutputHelper,
   run as runHelper,
-  assertOutput as assertOutputHelper
 } from "../integration_test_helper.ts";
 
 export async function run(command?: string) {
   if (command) {
-    command = command.replace(/\{path\}/g, "tests/integration/file_manager_with_too_many_options/expected_outputs/");
+    command = command.replace(
+      /\{path\}/g,
+      "tests/integration/file_manager_with_too_many_options/expected_outputs/",
+    );
   }
 
-  command = command
-    ? " " + command
-    : "";
+  command = command ? " " + command : "";
 
-  const fullCommand = `deno run --allow-read --allow-write tests/integration/file_manager_with_too_many_options/cli.ts${command}`;
+  const fullCommand =
+    `deno run --allow-read --allow-write tests/integration/file_manager_with_too_many_options/cli.ts${command}`;
 
   const stdout = await runHelper(fullCommand);
 
@@ -25,7 +27,8 @@ export function assertOutput(actual: string, expectedFile: string) {
     actual,
     expectedFile,
     false,
-    "tests/integration/file_manager_with_too_many_options/expected_outputs/" + expectedFile,
+    "tests/integration/file_manager_with_too_many_options/expected_outputs/" +
+      expectedFile,
   );
 }
 
@@ -68,7 +71,10 @@ Deno.test("should show log value: -G", async () => {
 
 Deno.test("should show greeting and a log value: -G", async () => {
   const stdout = await run("-G -L Sup");
-  asserts.assertEquals(stdout.trim(), "Greeted from the main command.\nLog value: Sup");
+  asserts.assertEquals(
+    stdout.trim(),
+    "Greeted from the main command.\nLog value: Sup",
+  );
 });
 
 // Test that the main command's `handle()` method is not called beacuse it
@@ -102,22 +108,30 @@ Deno.test("should show file does not exist: read -D some_file", async () => {
 });
 
 Deno.test("should show file exists: read -D file_to_read.txt", async () => {
-  const stdout = await run("read -D tests/integration/file_manager_with_too_many_options/file_to_read.txt");
+  const stdout = await run(
+    "read -D tests/integration/file_manager_with_too_many_options/file_to_read.txt",
+  );
   asserts.assertEquals(stdout.trim(), "File exists.");
 });
 
 Deno.test("should show contents: read file_to_read.txt", async () => {
-  const stdout = await run("read tests/integration/file_manager_with_too_many_options/file_to_read.txt");
+  const stdout = await run(
+    "read tests/integration/file_manager_with_too_many_options/file_to_read.txt",
+  );
   asserts.assertEquals(stdout, "YOU SHALL NOT PASS");
 });
 
 Deno.test("should show contents with extra log value: read -L file_to_read.txt", async () => {
-  const stdout = await run("read -L SomeValue tests/integration/file_manager_with_too_many_options/file_to_read.txt");
+  const stdout = await run(
+    "read -L SomeValue tests/integration/file_manager_with_too_many_options/file_to_read.txt",
+  );
   asserts.assertEquals(stdout, "SomeValue\nYOU SHALL NOT PASS");
 });
 
 Deno.test("should do a dry run and add an extra log value: read -L --dry-run file_to_read.txt", async () => {
-  const stdout = await run("read -L SomeValue --dry-run tests/integration/file_manager_with_too_many_options/file_to_read.txt");
+  const stdout = await run(
+    "read -L SomeValue --dry-run tests/integration/file_manager_with_too_many_options/file_to_read.txt",
+  );
   asserts.assertEquals(stdout, "SomeValue\nFile exists.");
 });
 

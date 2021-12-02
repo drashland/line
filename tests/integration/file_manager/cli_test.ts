@@ -1,19 +1,21 @@
 import { asserts } from "../../deps.ts";
 import {
+  assertOutput as assertOutputHelper,
   run as runHelper,
-  assertOutput as assertOutputHelper
 } from "../integration_test_helper.ts";
 
 export async function run(command?: string) {
   if (command) {
-    command = command.replace(/\{path\}/g, "tests/integration/file_manager/expected_outputs/");
+    command = command.replace(
+      /\{path\}/g,
+      "tests/integration/file_manager/expected_outputs/",
+    );
   }
 
-  command = command
-    ? " " + command
-    : "";
+  command = command ? " " + command : "";
 
-  const fullCommand = `deno run --allow-read --allow-write tests/integration/file_manager/cli.ts${command}`;
+  const fullCommand =
+    `deno run --allow-read --allow-write tests/integration/file_manager/cli.ts${command}`;
 
   const stdout = await runHelper(fullCommand);
 
@@ -87,7 +89,9 @@ Deno.test("should show error: read some_file", async () => {
 });
 
 Deno.test("should show contents: read file_to_read.txt", async () => {
-  const stdout = await run("read tests/integration/file_manager/file_to_read.txt");
+  const stdout = await run(
+    "read tests/integration/file_manager/file_to_read.txt",
+  );
   asserts.assertEquals(stdout, "YOU SHALL NOT PASS");
 });
 

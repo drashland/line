@@ -12,7 +12,7 @@ class Main extends Line.MainCommand {
 
   public options = {
     "-G               ": "Greet", // Assert that we trim
-    "-L [value],          --log [value]": "Log a value." // Assert that we trim
+    "-L [value],          --log [value]": "Log a value.", // Assert that we trim
   };
 
   public handle(): void {
