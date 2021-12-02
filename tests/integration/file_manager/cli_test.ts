@@ -56,6 +56,14 @@ Deno.test("should show version: -v", async () => {
   assertOutput(stdout, "version.txt");
 });
 
+// Test falling back to main command. The `test` subcommand does not exist, so
+// we expect the main command to handle it.
+
+Deno.test("should fall back to main command: test", async () => {
+  const stdout = await run("test");
+  assertOutput(stdout, "Main Command handle() called");
+});
+
 // Read command
 
 Deno.test("should show read help menu: read", async () => {
