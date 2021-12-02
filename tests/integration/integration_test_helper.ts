@@ -45,6 +45,18 @@ export function assertOutput(
     );
   }
 
+  if (Deno.build.os == "windows") {
+    asserts.assertEquals(
+      actual.trim(), // We trim because counting new lines sucks
+      decoder.decode(Deno.readFileSync(
+        expectedFileLocation,
+      ))
+        .replace(/\r/g, "") // windows is special
+        .trim(), // We trim because counting new lines sucks
+    );
+    return;
+  }
+
   asserts.assertEquals(
     actual.trim(), // We trim because counting new lines sucks
     decoder.decode(Deno.readFileSync(
