@@ -6,7 +6,7 @@
 
 <img align="right" height="100" src="./logo.svg" alt="Drash logo">
 
-Line is a class-based, command-line interface (CLI) framework
+Line is a class-based, command-line interface (CLI) framework.
 
 View the full documentation at https://drash.land/line.
 
