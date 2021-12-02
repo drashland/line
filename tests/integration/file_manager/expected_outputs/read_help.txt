@@ -1,0 +1,16 @@
+USAGE (for: `fm read`)
+
+    fm read [option]
+    fm read [options] [arg: file]
+
+ARGUMENTS
+
+    file
+        (no description)
+
+OPTIONS
+
+    -h, --help
+        Show this menu.
+    -v, --version
+        Show this CLI's version.
