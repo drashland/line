@@ -24,7 +24,7 @@ export function assertOutput(actual: string, expectedFile: string) {
   assertOutputHelper(
     actual,
     expectedFile,
-    true,
+    false,
     "tests/integration/file_manager/expected_outputs/" + expectedFile,
   );
 }
@@ -110,7 +110,7 @@ Deno.test("should show unknown argument error: read arg1 arg2", async () => {
 
 Deno.test("should show write missing argument error: write", async () => {
   const stdout = await run("write");
-  assertOutput(stdout, "write_missing_argument.txt");
+  assertOutput(stdout, "write_missing_argument_file_contents.txt");
 });
 
 Deno.test("should show write help menu: write -h", async () => {
@@ -125,7 +125,7 @@ Deno.test("should show write help menu: write --help", async () => {
 
 Deno.test("should show missing arugment error: write some_file", async () => {
   const stdout = await run("write some_file");
-  assertOutput(stdout, "write_missing_argument.txt");
+  assertOutput(stdout, "write_missing_argument_contents.txt");
 });
 
 Deno.test("should show unknown argument error: write -D some_file.txt contents", async () => {

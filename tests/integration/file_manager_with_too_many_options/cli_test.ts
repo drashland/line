@@ -24,7 +24,7 @@ export function assertOutput(actual: string, expectedFile: string) {
   assertOutputHelper(
     actual,
     expectedFile,
-    true,
+    false,
     "tests/integration/file_manager_with_too_many_options/expected_outputs/" + expectedFile,
   );
 }
