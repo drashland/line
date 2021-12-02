@@ -1,0 +1,3 @@
+Passed in arg: Supppppp
+Greeted from the main command.
+Log value: Sup
