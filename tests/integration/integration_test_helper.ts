@@ -25,9 +25,10 @@ export async function run(command: string) {
  *
  * @param actual - The stdout from Deno.run().
  * @param expectedFile - The file containing what we expect from stdout.
- * @param writeExpectedFile - Do you want to write the expected file? Se this to
- * `true` to write all expected output files. This is good if we need to
- * regenerate all expected files.
+ * @param writeExpectedFile - Do you want to write the expected file? Set this
+ * to `true` to write all expected output files. Then set this to false to
+ * ensure that all tests still pass. This is good if we need to regenerate all
+ * expected files.
  * @param expectedFileLocation - If the above is set to `true`, then this
  * function will write the expected file to this location.
  */
