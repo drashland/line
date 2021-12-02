@@ -1,0 +1,8 @@
+[31m[ERROR] [39mSubcommand 'write' used incorrectly. Error(s) found:
+
+  * Unknown argument(s) provided: some_file.txt, contents.
+
+USAGE (for: `fm write`)
+
+    fm write [option]
+    fm write [options] [arg: file] [arg: contents]

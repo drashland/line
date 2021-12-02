@@ -1,0 +1,8 @@
+[31m[ERROR] [39mSubcommand 'read' used incorrectly. Error(s) found:
+
+  * Unknown argument(s) provided: arg2.
+
+USAGE (for: `fm read`)
+
+    fm read [option]
+    fm read [options] [arg: file]
