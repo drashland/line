@@ -22,22 +22,39 @@ version-resolver:
     labels:
       - 'Type: Patch'
       - 'Type: Chore' # allow our chore PR's to just be patches too
-  default: patch
+  default: 'patch'
 
 # What our release will look like. If no draft has been created, then this will be used, otherwise $CHANGES just gets addedd
 template: |
-  __Compatibility__
+  ## Compatibility
 
-  * Requires Deno v<DENO_VERSION> or higher
-  * Uses Deno std@<STD_VERSION>
+  Requires Deno v<version>
+  Uses Deno Standard Modules <version>
 
-  __Importing__
+  ## Documentation
 
-  * Import this latest release by using the following in your project(s):
-    ```typescript
-    import { Line, Subcommand } from "https://deno.land/x/line@v$RESOLVED_VERSION/mod.ts";
-    ```
+  * [Full Documentation](https://drash.land/line/v2.x/getting-started/introduction)
 
-  __Updates__
+  ## Usage
+
+  1. Create a `deps.ts` file.
+
+  ```typescript
+  // deps.ts
+
+  export * as Line from "https://deno.land/x/line@v$RESOLVED_VERSION/mod.ts";
+  ```
+
+  2. Import `Line` from your `deps.ts` file.
+
+  ```typescript
+  import { Line } from "./deps.ts"
+
+  ... your
+  ... code
+  ... here
+  ```
+
+  ## Release Summary
 
   $CHANGES
