@@ -211,12 +211,6 @@ export class MainCommand extends Command {
       const [_subcommand, subcommandObject] of this.#subcommands_map.entries()
     ) {
       if (input == subcommandObject.name) {
-        // No args passed to the subcommand? Show how to use the subcommand.
-        if (!denoArgs[1]) {
-          subcommandObject.showHelp();
-          Deno.exit(1);
-        }
-
         // Show the subcommands help menu?
         if (
           denoArgs.indexOf("-h") !== -1 ||

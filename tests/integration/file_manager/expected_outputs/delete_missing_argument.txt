@@ -1,0 +1,8 @@
+[31m[ERROR] [39mSubcommand 'delete' used incorrectly. Error(s) found:
+
+  * Argument 'file' is missing
+
+USAGE (for: `fm delete`)
+
+    fm delete [option]
+    fm delete [options] [arg: file]

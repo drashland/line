@@ -66,9 +66,9 @@ Deno.test("show unknown argument error: test", async () => {
 
 // Read command
 
-Deno.test("should show read help menu: read", async () => {
+Deno.test("should show read missing argument error: read", async () => {
   const stdout = await run("read");
-  assertOutput(stdout, "read_help.txt");
+  assertOutput(stdout, "read_missing_argument.txt");
 });
 
 Deno.test("should show read help menu: read -h", async () => {
@@ -108,9 +108,9 @@ Deno.test("should show unknown argument error: read arg1 arg2", async () => {
 
 // Write command
 
-Deno.test("should show write help menu: write", async () => {
+Deno.test("should show write missing argument error: write", async () => {
   const stdout = await run("write");
-  assertOutput(stdout, "write_help.txt");
+  assertOutput(stdout, "write_missing_argument.txt");
 });
 
 Deno.test("should show write help menu: write -h", async () => {
@@ -159,9 +159,9 @@ Deno.test("should write file: write file_to_write.txt something", async () => {
 
 // Delete command
 
-Deno.test("should show delete help menu: delete", async () => {
+Deno.test("should show delete missing argument error: delete", async () => {
   const stdout = await run("delete");
-  assertOutput(stdout, "delete_help.txt");
+  assertOutput(stdout, "delete_missing_argument.txt");
 });
 
 Deno.test("should show delete help menu: delete -h", async () => {

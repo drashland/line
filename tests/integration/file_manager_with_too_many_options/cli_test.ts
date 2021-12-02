@@ -81,9 +81,9 @@ Deno.test("show unknown argument error: test", async () => {
 
 // Read command
 
-Deno.test("should show read help menu: read", async () => {
+Deno.test("should show read missing argument error: read", async () => {
   const stdout = await run("read");
-  assertOutput(stdout, "read_help.txt");
+  assertOutput(stdout, "read_missing_argument.txt");
 });
 
 Deno.test("should show read help menu: read -h", async () => {
