@@ -52,16 +52,16 @@ Deno.test("should show version: --version", async () => {
 });
 
 Deno.test("should show version: -v", async () => {
-  const stdout = await run("-h");
+  const stdout = await run("-v");
   assertOutput(stdout, "version.txt");
 });
 
-// Test falling back to main command. The `test` subcommand does not exist, so
-// we expect the main command to handle it.
+// Test that the main command's `handle()` method is not called beacuse it
+// doesn't take in an arg.
 
-Deno.test("should fall back to main command: test", async () => {
+Deno.test("show unknown argument error: test", async () => {
   const stdout = await run("test");
-  assertOutput(stdout, "Main Command handle() called");
+  assertOutput(stdout, "unknown_argument_test.txt");
 });
 
 // Read command
@@ -91,19 +91,19 @@ Deno.test("should show contents: read file_to_read.txt", async () => {
   asserts.assertEquals(stdout, "YOU SHALL NOT PASS");
 });
 
-Deno.test("should show unknown argument error: read -D test", async () => {
+Deno.test("should show file does not exist: read -D test", async () => {
   const stdout = await run("read -D {path}test");
-  assertOutput(stdout, "read_with_unknown_argument_1.txt");
+  assertOutput(stdout, "read_unknown_argument_1.txt");
 });
 
-Deno.test("should show unknown argument error: read -D -D test", async () => {
+Deno.test("should show option provided more than once error: read -D -D test", async () => {
   const stdout = await run("read -D -D test");
-  assertOutput(stdout, "read_with_unknown_argument_2.txt");
+  assertOutput(stdout, "read_unknown_argument_2.txt");
 });
 
 Deno.test("should show unknown argument error: read arg1 arg2", async () => {
   const stdout = await run("read arg1 arg2");
-  assertOutput(stdout, "read_with_unknown_argument_3.txt");
+  assertOutput(stdout, "read_unknown_argument_3.txt");
 });
 
 // Write command
@@ -129,7 +129,7 @@ Deno.test("should show missing arugment error: write some_file", async () => {
 });
 
 Deno.test("should show unknown argument error: write -D some_file.txt contents", async () => {
-  const stdout = await run("write -D {path}some_file.txt");
+  const stdout = await run("write -D {path}some_file.txt contents");
   assertOutput(stdout, "write_with_unknown_argument_1.txt");
 });
 

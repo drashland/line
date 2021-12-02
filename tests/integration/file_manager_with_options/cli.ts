@@ -9,10 +9,6 @@ class Main extends Line.MainCommand {
   ];
 
   public signature = "fm";
-
-  public handle(): void {
-    console.log("Main Command handle() called");
-  }
 }
 
 class Read extends Line.Subcommand {

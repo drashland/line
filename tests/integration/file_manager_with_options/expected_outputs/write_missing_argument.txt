@@ -1,8 +1,0 @@
-[31m[ERROR] [39mSubcommand 'write' used incorrectly. Error(s) found:
-
-  * Argument 'contents' is missing
-
-USAGE (for: `fm write`)
-
-    fm write [option]
-    fm write [options] [arg: file] [arg: contents]
