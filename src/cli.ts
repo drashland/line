@@ -1,10 +1,10 @@
-import { ICliOptions, IConstructable } from "./interfaces.ts";
+import { ICLIOptions, IConstructable } from "./interfaces.ts";
 import { MainCommand } from "./main_command.ts";
 
 /**
  * A class to help build CLIs.
  */
-export class Cli {
+export class CLI {
   /**
    * See MainCommand.
    */
@@ -26,9 +26,9 @@ export class Cli {
   public version: string;
 
   /**
-   * See ICliOptions.
+   * See ICLIOptions.
    */
-  #options: ICliOptions;
+  #options: ICLIOptions;
 
   //////////////////////////////////////////////////////////////////////////////
   // FILE MARKER - CONSTRUCTOR /////////////////////////////////////////////////
@@ -37,9 +37,9 @@ export class Cli {
   /**
    * Construct an object of this class.
    *
-   * @param options - See ICliOptions for more information.
+   * @param options - See ICLIOptions for more information.
    */
-  constructor(options: ICliOptions) {
+  constructor(options: ICLIOptions) {
     this.#options = options;
     this.name = options.name;
     this.description = options.description;

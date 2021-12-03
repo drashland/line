@@ -67,7 +67,7 @@ class Read extends Line.Subcommand {
   }
 }
 
-const service = new Line.Cli({
+const service = new Line.CLI({
   name: "File Manager (with hella options)",
   description: "Woop woop IDK who would actually make a CLI like this",
   version: "v1.0.0",

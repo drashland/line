@@ -46,7 +46,7 @@ class Read extends Line.Subcommand {
   }
 }
 
-const service = new Line.Cli({
+const service = new Line.CLI({
   name: "File Manager (with options)",
   description: "Woop woop file manager with options",
   version: "v1.0.0",

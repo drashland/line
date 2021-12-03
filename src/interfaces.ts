@@ -37,7 +37,7 @@ export interface IHelpable {
  * command
  *     The main command.
  */
-export interface ICliOptions {
+export interface ICLIOptions {
   name: string;
   description: string;
   version: string;

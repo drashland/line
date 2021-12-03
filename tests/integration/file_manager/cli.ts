@@ -66,7 +66,7 @@ class Delete extends Line.Subcommand {
   }
 }
 
-const service = new Line.Cli({
+const service = new Line.CLI({
   name: "File Manager",
   description: "A file manager.",
   version: "v1.0.0",
