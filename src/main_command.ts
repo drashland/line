@@ -73,7 +73,7 @@ export class MainCommand extends Command {
         colors.red(`[ERROR] `) +
           `Command '${this.name}' used incorrectly. Error(s) found:\n${errorString}\n`,
       );
-      console.log(this.#getHelpMenuUsage());
+      console.log(this.#getHelpMenuUsage() + `\n\n    Run \`${this.name} --help\` for more information.`);
       Deno.exit(1);
     }
 

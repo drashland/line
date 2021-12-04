@@ -105,7 +105,7 @@ export class Subcommand extends Command {
         colors.red(`[ERROR] `) +
           `Subcommand '${this.name}' used incorrectly. Error(s) found:\n${errorString}\n`,
       );
-      console.log(this.#getHelpMenuUsage());
+      console.log(this.#getHelpMenuUsage() + `\n\n    Run \`${this.main_command.name} ${this.name} --help\` for more information.`);
       Deno.exit(1);
     }
 
