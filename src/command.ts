@@ -172,7 +172,7 @@ export abstract class Command {
             alreadyProcessed = true;
           }
         });
-        if (alreadyProcessed) {
+        if (!alreadyProcessed) {
           help += `\n    ${optionObject.signatures.join(", ")}\n`;
           help += `        ${optionObject.description}`;
         }
