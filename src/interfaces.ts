@@ -2,13 +2,11 @@ import { MainCommand } from "./main_command.ts";
 
 /**
  * The representation of an argument during runtime.
- *
- * description - The argument's description.
- * value - The argument's value provided through the command line.
  */
 export interface IArgument {
+  /** The argument's description. */
   description: string;
-  // type: string;
+  /** The argument's value provided through the command line. */
   value?: string;
 }
 
