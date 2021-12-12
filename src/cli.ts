@@ -2,18 +2,21 @@ import { ICLIOptions, IConstructable } from "./interfaces.ts";
 import { MainCommand } from "./main_command.ts";
 
 /**
- * A class to help build CLIs.
+ * A class to help build CLIs. This class is responsible for the initial set up
+ * of the CLI. Specifically, it sets up the main command so that it can show
+ * help menus. If a main command contains subcommands, then those subcommands
+ * are set up in the main command when it is constructed.
  */
 export class CLI {
-  /**
-   * See MainCommand.
-   */
-  public main_command!: MainCommand;
-
   /**
    * This CLI's description.
    */
   public description: string;
+
+  /**
+   * See MainCommand.
+   */
+  public main_command!: MainCommand;
 
   /**
    * This CLI's name.
@@ -44,20 +47,23 @@ export class CLI {
     this.name = options.name;
     this.description = options.description;
     this.version = options.version;
-    this.#setUpMainCommand();
   }
 
   //////////////////////////////////////////////////////////////////////////////
-  // FILE MARKER - METHODS - PUBLIC ////////////////////////////////////////////
+  // FILE MARKER - PUBLIC METHODS //////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
 
   /**
    * Run this CLI.
    */
   public async run(): Promise<void> {
-    if (this.main_command.setUp) {
-      this.main_command.setUp();
-    }
+    // Set up the main command. We do this early in case we need to show its
+    // help menu.
+    this.main_command =
+      new (this.#options.command as unknown as IConstructable<MainCommand>)(
+        this,
+      );
+    this.main_command.setUp();
 
     const input = Deno.args[0];
 
@@ -82,7 +88,16 @@ export class CLI {
     Deno.exit(0);
   }
 
-  public showHelp(): void {
+  //////////////////////////////////////////////////////////////////////////////
+  // FILE MARKER - PROTECTED METHODS ///////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * This method is a wrapper around the main command's help menu. Reason it
+   * needs to be wrapped is because we need to show the CLI's name and
+   * description before showing the main command's help menu.
+   */
+  protected showHelp(): void {
     console.log(`${this.name} - ${this.description}\n`);
     this.main_command.showHelp();
     Deno.exit(0);
@@ -93,12 +108,6 @@ export class CLI {
    */
   protected showVersion(): void {
     console.log(`${this.name} ${this.version}`);
-  }
-
-  #setUpMainCommand(): void {
-    this.main_command =
-      new (this.#options.command as unknown as IConstructable<MainCommand>)(
-        this,
-      );
+    Deno.exit(0);
   }
 }

@@ -3,19 +3,19 @@ import { MainCommand } from "./main_command.ts";
 import { colors } from "../deps.ts";
 
 /**
- * This class represents a subcommand. It can only be executed by the main
- * command.
+ * This class represents a subcommand in the CLI. It can only be executed by the
+ * main command.
  */
 export class Subcommand extends Command {
-  /**
-   * See MainCommand.
-   */
-  public main_command: MainCommand;
-
   /**
    * @inheritdoc
    */
   public description = "(no description)";
+
+  /**
+   * See MainCommand.
+   */
+  public main_command: MainCommand;
 
   /**
    * @inheritdoc
@@ -27,6 +27,8 @@ export class Subcommand extends Command {
   //////////////////////////////////////////////////////////////////////////////
 
   /**
+   * Construct an object of this class.
+   *
    * @param mainCommand - See MainCommand.
    */
   constructor(mainCommand: MainCommand) {
@@ -43,8 +45,8 @@ export class Subcommand extends Command {
    *
    * @param argumentName - The argument in question.
    *
-   * @returns The value of the argument in the command line or undefined if the
-   * argument does not exist.
+   * @returns The value of the argument in the command line or `undefined` if
+   * the argument does not exist.
    */
   public argument(argumentName: string): string | undefined {
     const argumentObject = this.arguments_map.get(argumentName);
@@ -57,9 +59,10 @@ export class Subcommand extends Command {
   }
 
   /**
-   * @inheritdoc
-   *
-   * To be implemented by the user.
+   * This method is to be implemented by the user of this framework. This method
+   * is executed during runtime and should contain the code that this subcommand
+   * should process. For example, if the subcommand should write a file, then
+   * this method could have `Deno.writeFileSync( ... )` in its body.
    */
   public handle(): void {
     return;
@@ -87,7 +90,7 @@ export class Subcommand extends Command {
    * Run this subcommand.
    */
   public async run(): Promise<void> {
-    let denoArgs = Deno.args.slice(); // Make a copy that we  can mutate
+    let denoArgs = Deno.args.slice(); // Make a copy that we can mutate
 
     // Remove the subcommand from the command line. We only care about the items
     // that come after the subcommand.

@@ -4,7 +4,7 @@ import { IConstructable } from "./interfaces.ts";
 import { colors } from "../deps.ts";
 
 /**
- * The main command of the CLI.
+ * This class represents the main command of the CLI.
  */
 export class MainCommand extends Command {
   /**
@@ -25,7 +25,7 @@ export class MainCommand extends Command {
   #subcommands_map: Map<string, Subcommand> = new Map();
 
   /**
-   * Does this command take subcommands?
+   * Does this main command take subcommands?
    */
   #takes_subcommands = false;
 
@@ -34,24 +34,26 @@ export class MainCommand extends Command {
   //////////////////////////////////////////////////////////////////////////////
 
   /**
-   * @inheritdoc
-   *
-   * To be implemented by the user if they need it. Sometimes a main command
-   * does not need to implement this.
+   * This method is to be implemented by the user of this framework. This method
+   * is executed during runtime and should contain the code that this main
+   * command should process. For example, if this main command should log things
+   * to the console, then this method could have `console.log( ... )` in its
+   * body.
    */
   public handle(): void {
     return;
   }
 
   /**
-   * Run this command.
+   * Run this main command.
    *
    * @param input - The `Deno.args[0]` value.
    */
   public async run(input: string): Promise<void> {
     const denoArgs = Deno.args.slice();
 
-    // If this command takes in arguments, then we expect one to be specified
+    // If this main command takes in arguments, then we expect one to be
+    // specified
     if (
       (this.takes_arguments || this.#subcommands_map.size > 0) &&
       (denoArgs.length <= 0)
@@ -89,7 +91,7 @@ export class MainCommand extends Command {
   }
 
   /**
-   * Set up this command.
+   * Set up this main command.
    */
   public setUp(): void {
     super.setUp();
@@ -98,7 +100,7 @@ export class MainCommand extends Command {
   }
 
   /**
-   * Show this command's help menu.
+   * Show this main command's help menu.
    */
   public showHelp(): void {
     let help = this.#getHelpMenuUsage();
@@ -115,9 +117,9 @@ export class MainCommand extends Command {
   //////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Get the help menu "SUBCOMMANDS" section for this command.
+   * Get the help menu "SUBCOMMANDS" section for this main command.
    *
-   * @returns The help menu "SUBCOMMANDS" section for this command.
+   * @returns The help menu "SUBCOMMANDS" section for this main command.
    */
   #getHelpMenuSubcommands(): string {
     let help = "";
@@ -136,9 +138,9 @@ export class MainCommand extends Command {
   }
 
   /**
-   * Get the help menu "USAGE" section for this command.
+   * Get the help menu "USAGE" section for this main command.
    *
-   * @returns The help menu "USAGE" section for this command.
+   * @returns The help menu "USAGE" section for this main command.
    */
   #getHelpMenuUsage(): string {
     let usage = `USAGE\n\n`;
@@ -205,8 +207,8 @@ export class MainCommand extends Command {
   /**
    * Run the given subcommand (if it exists).
    *
-   * @param input - The input from Deno.args.
-   * @param denoArgs - The Deno.args array.
+   * @param input - The input from `Deno.args`.
+   * @param denoArgs - The `Deno.args` array.
    */
   async #runSubcommand(input: string, denoArgs: string[]): Promise<void> {
     // If the input matches a subcommand, then let the subcommand take over
