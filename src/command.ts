@@ -60,7 +60,7 @@ export abstract class Command {
   //////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Run this commands handler.
+   * Run this command's handler.
    */
   abstract handle(): void;
 
