@@ -6,3 +6,5 @@ USAGE
 
     fm [option]
     fm [subcommand]
+
+    Run `fm --help` for more information.

@@ -17,5 +17,7 @@ OPTIONS
     -v, --version
         Show this CLI's version.
 
+    -G
+        Greet
     -L, --log
         Log a value.

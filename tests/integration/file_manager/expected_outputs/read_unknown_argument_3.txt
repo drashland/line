@@ -6,3 +6,5 @@ USAGE (for: `fm read`)
 
     fm read [option]
     fm read [options] [arg: file]
+
+    Run `fm read --help` for more information.

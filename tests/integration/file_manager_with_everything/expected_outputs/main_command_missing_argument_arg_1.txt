@@ -7,3 +7,5 @@ USAGE
     fm [option]
     fm [options] [arg: arg]
     fm [subcommand]
+
+    Run `fm --help` for more information.

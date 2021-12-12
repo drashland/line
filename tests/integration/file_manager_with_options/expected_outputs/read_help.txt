@@ -17,3 +17,5 @@ OPTIONS
 
     -D, --dry-run
         Check if the file exists before reading.
+    -L
+        Add an extra log value.

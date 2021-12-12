@@ -6,3 +6,5 @@ USAGE (for: `fm delete`)
 
     fm delete [option]
     fm delete [options] [arg: file]
+
+    Run `fm delete --help` for more information.
