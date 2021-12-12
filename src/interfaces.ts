@@ -1,45 +1,45 @@
-import { Subcommand } from "../mod.ts";
+import { MainCommand } from "./main_command.ts";
 
-/**
- * The signature of the logger's methods.
- */
-export type TLogMethod = (message: string) => void;
+export interface IConstructable<T> {
+  new (...args: unknown[]): T;
+}
 
-/**
- * This CLI's configs.
- *
- * name - The CLI's name.
- *
- * description - The CLI's description.
- *
- * command - The CLI's main command. This is the command used to run th CLI.
- *
- * subcommands - An array of Subcommand classes.
- *
- * version - This CLI's version.
- */
-export interface ILineConfigs {
-  name: string;
+export interface IArgument {
   description: string;
-  command: string;
-  subcommands: typeof Subcommand[];
-  version: string;
+  // type: string;
+  value?: string;
+}
+
+export interface IOption {
+  description: string;
+  signatures: string[];
+  // deno-lint-ignore camelcase
+  takes_value: boolean;
+  value?: boolean | string;
+}
+
+export interface IHelpable {
+  showHelp: () => void;
 }
 
 /**
- * This CLI's logger.
+ * The options that can be passed into the CLI.
  *
- * debug - Log a debug message. Outputs "DEBUG some message".
+ * name
+ *     The CLI's name.
  *
- * error - Log an error message. Outputs "ERROR some message".
+ * description
+ *     The CLI's description.
  *
- * info - Log an info message. Outputs "INFO some message".
+ * version
+ *     The CLI's version.
  *
- * warn - Log an warning message. Outputs "WARN some message".
+ * command
+ *     The main command.
  */
-export interface ILogger {
-  debug: TLogMethod;
-  error: TLogMethod;
-  info: TLogMethod;
-  warn: TLogMethod;
+export interface ICLIOptions {
+  name: string;
+  description: string;
+  version: string;
+  command: typeof MainCommand;
 }

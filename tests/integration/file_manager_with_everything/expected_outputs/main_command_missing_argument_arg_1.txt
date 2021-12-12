@@ -1,0 +1,11 @@
+[31m[ERROR] [39mCommand 'fm' used incorrectly. Error(s) found:
+
+  * Argument 'arg' is missing
+
+USAGE
+
+    fm [option]
+    fm [options] [arg: arg]
+    fm [subcommand]
+
+    Run `fm --help` for more information.

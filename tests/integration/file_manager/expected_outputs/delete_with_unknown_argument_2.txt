@@ -1,0 +1,10 @@
+[31m[ERROR] [39mSubcommand 'delete' used incorrectly. Error(s) found:
+
+  * Unknown argument(s) provided: -D, some_file.txt.
+
+USAGE (for: `fm delete`)
+
+    fm delete [option]
+    fm delete [options] [arg: file]
+
+    Run `fm delete --help` for more information.

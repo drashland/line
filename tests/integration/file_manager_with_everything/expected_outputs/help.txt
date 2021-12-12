@@ -1,0 +1,29 @@
+File Manager (with hella options) - Woop woop IDK who would actually make a CLI like this
+
+USAGE
+
+    fm [option]
+    fm [options] [arg: arg]
+    fm [subcommand]
+
+ARGUMENTS
+
+    arg
+        (no description)
+
+SUBCOMMANDS
+
+    read
+        Read a file.
+
+OPTIONS
+
+    -h, --help
+        Show this menu.
+    -v, --version
+        Show this CLI's version.
+
+    -G
+        Greet
+    -L, --log
+        Log a value.

@@ -21,19 +21,8 @@ jobs:
       - name: Install Deno
         uses: denolib/setup-deno@master
 
-      - name: Unit
-        run: deno test --allow-env tests/unit
-
       - name: Integration
         run: deno test -A tests/integration
-
-      - name: Tutorials
-        run: deno test -A tests/tutorials
-
-      - name: Can create a CLI
-        run: |
-          deno install --allow-read --allow-write --name fm tests/integration/usage_as_a_file_manager_data.ts
-          fm --help
 
   linter:
     # Only one OS is required since fmt is cross platform
@@ -45,9 +34,8 @@ jobs:
       - name: Install Deno
         uses: denolib/setup-deno@master
 
-      - name: Formatter
+      - name: Check `deno lint` passes
+        run: deno lint --ignore=tests
+
+      - name: Check `deno fmt` passes
         run: deno fmt --check
-
-      - name: Linter
-        run: deno lint --unstable
-

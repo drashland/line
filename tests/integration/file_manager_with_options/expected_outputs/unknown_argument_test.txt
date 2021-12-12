@@ -1,0 +1,10 @@
+[31m[ERROR] [39mCommand 'fm' used incorrectly. Error(s) found:
+
+  * Unknown argument(s) provided: test.
+
+USAGE
+
+    fm [option]
+    fm [subcommand]
+
+    Run `fm --help` for more information.

@@ -1,0 +1,10 @@
+[31m[ERROR] [39mSubcommand 'write' used incorrectly. Error(s) found:
+
+  * Unknown argument(s) provided: arg3.
+
+USAGE (for: `fm write`)
+
+    fm write [option]
+    fm write [options] [arg: file] [arg: contents]
+
+    Run `fm write --help` for more information.
