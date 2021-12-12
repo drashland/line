@@ -12,16 +12,15 @@ export interface IArgument {
 
 /**
  * The options that can be passed into the CLI.
- *
- * name - The CLI's name.
- * description - The CLI's description.
- * version - The CLI's version.
- * command - The main command.
  */
 export interface ICLIOptions {
+  /** The CLI's name. */
   name: string;
+  /** The CLI's description. */
   description: string;
+  /** The CLI's version. */
   version: string;
+  /** The main command. */
   command: typeof MainCommand;
 }
 
@@ -36,18 +35,19 @@ export interface IConstructable<T> {
 
 /**
  * The representation of an option during runtime.
- *
- * description - The option's description.
- * signatures - A comma-delimited list of the option's signatures.
- * takes_value - Does this option take in a value?
- * value - The option's value. Initially set to `false` and set to `true` if
- * provided through the command line. Value is the provided value through the
- * command line if this option takes in a value.
  */
 export interface IOption {
+  /** The option's description. */
   description: string;
+  /** A comma-delimited list of the option's signatures. */
   signatures: string[];
+  /** Does this option take in a value? */
   // deno-lint-ignore camelcase
   takes_value: boolean;
+  /**
+   * The option's value. Initially set to `false` and set to `true` if provided
+   * through the command line. Value is the provided value through the command
+   * line if this option takes in a value.
+   */
   value?: boolean | string;
 }

@@ -41,24 +41,6 @@ export class Subcommand extends Command {
   //////////////////////////////////////////////////////////////////////////////
 
   /**
-   * Get the value of the specified argument.
-   *
-   * @param argumentName - The argument in question.
-   *
-   * @returns The value of the argument in the command line or `undefined` if
-   * the argument does not exist.
-   */
-  public argument(argumentName: string): string | undefined {
-    const argumentObject = this.arguments_map.get(argumentName);
-
-    if (argumentObject) {
-      return argumentObject.value;
-    }
-
-    return undefined;
-  }
-
-  /**
    * This method is to be implemented by the user of this framework. This method
    * is executed during runtime and should contain the code that this subcommand
    * should process. For example, if the subcommand should write a file, then
@@ -66,24 +48,6 @@ export class Subcommand extends Command {
    */
   public handle(): void {
     return;
-  }
-
-  /**
-   * Get the value of the specified option.
-   *
-   * @param optionName - The option in question.
-   *
-   * @returns The value of the option in the command line or undefined if the
-   * option does not exist.
-   */
-  public option(optionName: string): string | boolean | undefined {
-    const optionObject = this.options_map.get(optionName);
-
-    if (optionObject) {
-      return optionObject.value;
-    }
-
-    return undefined;
   }
 
   /**
@@ -130,6 +94,10 @@ export class Subcommand extends Command {
 
     console.log(help);
   }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // FILE MARKER - PRIVATE METHODS /////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
 
   /**
    * Get the help menu "USAGE" section.
