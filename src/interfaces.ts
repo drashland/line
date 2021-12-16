@@ -6,6 +6,8 @@ import { MainCommand } from "./main_command.ts";
 export interface IArgument {
   /** The argument's description. */
   description: string;
+  /** Is this argument optional? */
+  is_optional: boolean;
   /** The argument's value provided through the command line. */
   value?: string;
 }

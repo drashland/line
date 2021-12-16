@@ -119,7 +119,7 @@ export class Subcommand extends Command {
    * @returns The help menu "USAGE" section arguments.
    */
   #getHelpMenuUsageArgs(): string {
-    let match = this.signature.match(/\[\w+\]/g);
+    let match = this.signature.match(/\[\w+\??\]/g);
     if (match) {
       match = match.map((arg: string) => {
         return arg.replace("[", "[arg: ");

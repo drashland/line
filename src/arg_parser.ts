@@ -37,6 +37,9 @@ export function extractArgumentsFromDenoArgs(
     const argValue = denoArgs[0];
 
     if (!argValue) {
+      if (argObject.is_optional) {
+        continue;
+      }
       errors.push(`Argument '${argName}' is missing`);
     } else {
       argObject.value = argValue;
@@ -171,8 +174,9 @@ export function setArgumentsMapInitialValues(
       description = argsDescriptions[arg];
     }
 
-    argsMap.set(arg.trim(), {
+    argsMap.set(arg.replace("?", "").trim(), {
       description: description,
+      is_optional: isOptional(arg),
     });
   });
 }
@@ -295,4 +299,14 @@ function getOptionsPassedIntoDenoArgs(
   // value if it requires one). We want to include the last option (and its
   // value if it requires one) so we add `+ 1`.
   return denoArgs.splice(0, lastOptionIndex + 1);
+}
+
+/**
+ * Is the provided argument optional?
+ *
+ * @param argument
+ * @returns True if yes, false if no.
+ */
+function isOptional(argument: string): boolean {
+  return argument.charAt(argument.length - 1) === "?";
 }

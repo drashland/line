@@ -143,8 +143,11 @@ export abstract class Command {
     if (this.takes_arguments) {
       help += `\n\nARGUMENTS\n`;
       for (const [argument, argumentObject] of this.arguments_map.entries()) {
+        const optionalNote = argumentObject.is_optional
+          ? "(Optional) "
+          : "";
         help += `\n    ${argument}\n`;
-        help += `        ${argumentObject.description}`;
+        help += `        ${optionalNote}${argumentObject.description}`;
       }
     }
 
@@ -173,7 +176,11 @@ export abstract class Command {
           }
         });
         if (!alreadyProcessed) {
-          help += `\n    ${optionObject.signatures.join(", ")}\n`;
+          if (optionObject.takes_value) {
+            help += `\n    ${optionObject.signatures.join(" [value], ")} [value]\n`;
+          } else {
+            help += `\n    ${optionObject.signatures.join(", ")}\n`;
+          }
           help += `        ${optionObject.description}`;
         }
         optionsProcessed.push(option);
