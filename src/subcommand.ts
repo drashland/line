@@ -54,12 +54,11 @@ export class Subcommand extends Command {
    * Run this subcommand.
    */
   public async run(): Promise<void> {
-    let denoArgs = Deno.args.slice(); // Make a copy that we can mutate
-
-    // Remove the subcommand from the command line. We only care about the items
-    // that come after the subcommand.
-    const commandIndex = denoArgs.indexOf(this.name);
-    denoArgs = denoArgs.slice(commandIndex + 1, denoArgs.length);
+    const denoArgs = Deno.args.slice(); // Make a copy that we can mutate
+    // Remove the subcommand from the arg list because we only care about the
+    // arguments passed in. Everything after the subcommand should be options or
+    // arguments to the subcommand.
+    denoArgs.shift();
 
     const errors = super.validateDenoArgs(denoArgs);
 

@@ -1,0 +1,18 @@
+A main command with a subcommand. - Subcommands cannot be written twice.
+
+USAGE
+
+    main [option]
+    main [subcommand]
+
+SUBCOMMANDS
+
+    sub
+        A subcommand.
+
+OPTIONS
+
+    -h, --help
+        Show this menu.
+    -v, --version
+        Show this CLI's version.

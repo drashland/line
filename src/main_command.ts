@@ -84,8 +84,7 @@ export class MainCommand extends Command {
 
     // If we get here, then the input did not match a subcommand. Therefore, we
     // pass the argument to the main command for further handling (if a handler
-    // method exists).
-    // If the input wasn't a subcommand, then let the main command take over
+    // method exists and if the argument is in the main command's signature).
     await this.handle();
     Deno.exit(0);
   }
