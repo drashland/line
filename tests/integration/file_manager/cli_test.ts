@@ -95,6 +95,11 @@ Deno.test("should show contents: read file_to_read.txt", async () => {
   asserts.assertEquals(stdout, "YOU SHALL NOT PASS");
 });
 
+Deno.test("should show file does not exist: read -D read", async () => {
+  const stdout = await run("read -D read");
+  assertOutput(stdout, "read_unknown_argument_4.txt");
+});
+
 Deno.test("should show file does not exist: read -D test", async () => {
   const stdout = await run("read -D {path}test");
   assertOutput(stdout, "read_unknown_argument_1.txt");

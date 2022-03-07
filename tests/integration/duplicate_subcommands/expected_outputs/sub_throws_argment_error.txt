@@ -1,0 +1,10 @@
+[31m[ERROR] [39mSubcommand 'sub' used incorrectly. Error(s) found:
+
+  * Unknown argument(s) provided: sub.
+
+USAGE (for: `main sub`)
+
+    main sub [option]
+    main sub [options] 
+
+    Run `main sub --help` for more information.

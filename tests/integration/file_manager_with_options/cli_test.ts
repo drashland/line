@@ -117,6 +117,11 @@ Deno.test("should do a dry run and add an extra log value: read -L --dry-run fil
   asserts.assertEquals(stdout, "SomeValue\nFile exists.");
 });
 
+Deno.test("should show file does not exist: read -D read", async () => {
+  const stdout = await run("read -D read");
+  asserts.assertEquals(stdout.trim(), "File doesn't exist.");
+});
+
 Deno.test("should show file does not exist: read -D test", async () => {
   const stdout = await run("read -D {path}test");
   asserts.assertEquals(stdout.trim(), "File doesn't exist.");
