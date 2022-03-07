@@ -20,6 +20,7 @@ export function extractArgumentsFromDenoArgs(
   commandSignature: string,
   argsMap: Map<string, IArgument>,
 ): string[] {
+  // console.log('Beg of extractArgumentsFromDenoArgs');
   const errors: string[] = [];
 
   // Remove the command from the signature. We only care about its arguments.
@@ -53,6 +54,9 @@ export function extractArgumentsFromDenoArgs(
     errors.push(`Unknown argument(s) provided: ${denoArgs.join(", ")}.`);
   }
 
+  // console.log('End of extractArgumentsFromDenoArgs');
+
+
   return errors;
 }
 
@@ -67,19 +71,73 @@ export function extractArgumentsFromDenoArgs(
 export function extractOptionsFromDenoArgs(
   denoArgs: string[],
   optionsMap: Map<string, IOption>,
-): string[] {
+): string[] | undefined {
   const errors: string[] = [];
   const passedInOptions = getOptionsPassedIntoDenoArgs(denoArgs, optionsMap);
+  // console.log(`passedInOptions: ${passedInOptions}`);
+  // console.log(`optionsMap: ${JSON.stringify(optionsMap)}`);
 
   let isValue = false;
   let lastOptionObject: IOption | null = null;
-  const optionsProcessed: string[] = [];
+  const optionsProcessed = new Set();
+  let i: number = 0;
 
+  while (i < passedInOptions.length) {
+    // console.log(`i: ${i}`);
+    if (!optionsMap.has(passedInOptions[i])) {
+      optionsProcessed.add(passedInOptions[i]);
+      errors.push(`Unknown item '${passedInOptions[i]}' provided`);
+      i++;
+      continue;
+    }
+
+    console.log('After first continue');
+
+    let optionObject = optionsMap.get(passedInOptions[i])!;
+
+    let alreadyProcessed = false;
+    optionObject.signatures.forEach((signature: string) => {
+      if (optionsProcessed.has(signature)) {
+        alreadyProcessed = true;
+      }
+    });
+
+    if (alreadyProcessed) {
+      errors.push(
+        `Option '${
+          optionObject.signatures.join(", ")
+        }' was provided more than once`,
+      );
+
+      i++;
+      continue;
+    }
+
+    // console.log('After second return');
+    optionsProcessed.add(passedInOptions[i]);
+
+    optionObject.value = passedInOptions.slice(i + 1, i + optionObject.arg_count + 1);
+
+    let ndx = -1;
+    if ((ndx = optionObject.value.findIndex((optArg: string) => optionsMap.has(optArg))) !== -1) {
+      errors.push(
+        `Option ${passedInOptions[i]}, has the wrong number of arguments`
+      );
+
+      i += ndx + 1;
+    }
+    // console.log(`optionObject.value: ${optionObject.value}`);
+    i += optionObject.arg_count + 1;
+  }
+
+  /*
   passedInOptions.forEach((option: string) => {
     // If this option is a value, then set it on the last option that was
     // processed
     if (lastOptionObject && isValue) {
-      lastOptionObject.value = option;
+      if (lastOptionObject.value instanceof Array) {
+        lastOptionObject.value[i++] = option;
+      }
       // Reset the variables used to set values on a last option processed
       lastOptionObject = null;
       isValue = false;
@@ -108,16 +166,6 @@ export function extractOptionsFromDenoArgs(
       }
     });
 
-    if (alreadyProcessed) {
-      errors.push(
-        `Option '${
-          optionObject.signatures.join(", ")
-        }' was provided more than once`,
-      );
-      return;
-    }
-
-    optionsProcessed.push(option);
 
     // If this option takes a value, then set the flag to say that the next
     // option is the value
@@ -130,8 +178,8 @@ export function extractOptionsFromDenoArgs(
     // require a value. It just needs to "exist" in the command line, so we set
     // its value to true. We set it to true so when `this.option("option")` is
     // called from the command or subcommand class, it evaluates to true.
-    lastOptionObject.value = true;
   });
+  */
 
   return errors;
 }
@@ -194,6 +242,7 @@ export function setOptionsMapInitialValues(
     const optionObject: IOption = {
       description: options[optionSignatures],
       signatures: [],
+      arg_count: 0,
       // deno-lint-ignore camelcase
       takes_value: false,
     };
@@ -205,21 +254,77 @@ export function setOptionsMapInitialValues(
     // For each option signature specified ...
     split.forEach((signature: string) => {
       // ... trim leading/trailing spaces that might be in the signature ...
-      signature = signature.trim();
+      let openBracketNdx = signature.indexOf('[');
 
-      // ... and check to see if it takes in a value
-      if (signature.includes("[value]")) {
-        // If it takes in a value, then remove the `[value]` portion ...
-        signature = signature.replace(/\s+\[value\]/, "").trim();
-        // ... and set the option object's `takes_value` flag to true
+      if (openBracketNdx === -1) {
+        signature = signature.trim();
+      } else {
         optionObject.takes_value = true;
+        let sig = signature.substring(0, openBracketNdx).trim();
+        let argStr = signature.substring(openBracketNdx);
+        signature = sig;
+        let switchFlag: boolean = false;
+        let argCount: number = 0;
+
+        // console.log(`signature: ${signature}`);
+        for (const c of argStr) {
+          switch (c) {
+            case '[':
+              if (switchFlag === true) {
+                throw new Error("Left open bracket after another left open bracket found.");
+              }
+
+              switchFlag = !switchFlag;
+              break;
+            case ']':
+              if (switchFlag === false) {
+                throw new Error("Right open bracket has no matching left open bracket");
+              }
+
+              switchFlag = !switchFlag;
+              // console.log('Right bracket found!');
+              argCount++;
+
+              break;
+            case ' ':
+            case '\t':
+            case '\n':
+              if (switchFlag === true) {
+                throw new Error("White space char inside brackets");
+              }
+
+              break;
+            default:
+              if (switchFlag === false) {
+                  throw new Error("Non white-space character outside bracket");
+              }
+
+              break;
+          }
+        }
+
+        // ... and check to see if it takes in a value
+        /*
+        if (signature.includes("[value]")) {
+          // If it takes in a value, then remove the `[value]` portion ...
+          signature = signature.replace(/\s+\[value\]/, "").trim();
+          // ... and set the option object's `takes_value` flag to true
+          optionObject.takes_value = true;
+        }
+        */
+
+        // Once done, add all signatures that this option has ...
+        optionObject.value = new Array(argCount);
+        optionObject.arg_count = argCount;
+
+        optionObject.signatures.push(signature);
+        // ... and set this option -- identifiable by signature -- in the
+        // command's options Map
       }
 
-      // Once done, add all signatures that this option has ...
-      optionObject.signatures.push(signature);
-      // ... and set this option -- identifiable by signature -- in the
-      // command's options Map
+      // console.log(`before setting optionsMap, optionObject: ${JSON.stringify(optionObject)}`);
       optionsMap.set(signature, optionObject);
+
     });
   }
 }
@@ -247,8 +352,10 @@ function getLastOptionIndex(
   const optionsProcessed: string[] = [];
 
   denoArgs.forEach((arg: string, index: number) => {
+    // console.log(`arg: ${arg}`);
     if (optionsMap.has(arg)) {
       const option = optionsMap.get(arg)!;
+      // console.log(`option: ${JSON.stringify(option)}`);
       let alreadyProcessed = false;
       option.signatures.forEach((signature: string) => {
         if (optionsProcessed.indexOf(signature) !== -1) {
@@ -262,12 +369,18 @@ function getLastOptionIndex(
       }
 
       lastOptionIndex = index;
-      if (optionsMap.get(arg)!.takes_value) {
-        lastOptionIndex = index + 1;
+      let optionObject = optionsMap.get(arg);
+      // console.log(`optionObject: ${JSON.stringify(optionObject)}`);
+      if (optionObject!.takes_value && optionObject!.value instanceof Array) {
+          // console.log(`optionObject!.value.length: ${optionObject!.value.length}`);
+          lastOptionIndex += optionObject!.value.length;
       }
+
       optionsProcessed.push(arg);
     }
   });
+
+  // console.log(`lastOptionIndex: ${lastOptionIndex}`);
 
   return lastOptionIndex;
 }

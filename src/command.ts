@@ -99,7 +99,7 @@ export abstract class Command {
    * @returns The value of the option in the command line or undefined if the
    * option does not exist.
    */
-  public option(optionName: string): string | boolean | undefined {
+  public option(optionName: string): string[] | boolean | undefined {
     const optionObject = this.options_map.get(optionName);
 
     if (optionObject) {
@@ -197,6 +197,6 @@ export abstract class Command {
     );
 
     // Combine all the errors and remove any duplicates
-    return [...new Set(optionsErrors.concat(argsErrors))].sort();
+    return [...new Set(optionsErrors!.concat(argsErrors) ?? null)].sort();
   }
 }

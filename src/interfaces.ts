@@ -44,10 +44,11 @@ export interface IOption {
   /** Does this option take in a value? */
   // deno-lint-ignore camelcase
   takes_value: boolean;
+  arg_count: number;
   /**
    * The option's value. Initially set to `false` and set to `true` if provided
    * through the command line. Value is the provided value through the command
    * line if this option takes in a value.
    */
-  value?: boolean | string;
+  value?: boolean | string[];
 }
