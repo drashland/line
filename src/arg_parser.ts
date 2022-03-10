@@ -20,7 +20,6 @@ export function extractArgumentsFromDenoArgs(
   commandSignature: string,
   argsMap: Map<string, IArgument>,
 ): string[] {
-  // console.log('Beg of extractArgumentsFromDenoArgs');
   const errors: string[] = [];
 
   // Remove the command from the signature. We only care about its arguments.
@@ -49,7 +48,6 @@ export function extractArgumentsFromDenoArgs(
     errors.push(`Unknown argument(s) provided: ${denoArgs.join(", ")}.`);
   }
 
-  // console.log('End of extractArgumentsFromDenoArgs');
 
 
   return errors;
@@ -69,16 +67,11 @@ export function extractOptionsFromDenoArgs(
 ): string[] | undefined {
   const errors: string[] = [];
   const passedInOptions = getOptionsPassedIntoDenoArgs(denoArgs, optionsMap);
-  // console.log(`passedInOptions: ${passedInOptions}`);
-  // console.log(`optionsMap: ${JSON.stringify(optionsMap)}`);
 
-  let isValue = false;
-  let lastOptionObject: IOption | null = null;
   const optionsProcessed = new Set();
-  let i: number = 0;
+  let i = 0;
 
   while (i < passedInOptions.length) {
-    // console.log(`i: ${i}`);
     if (!optionsMap.has(passedInOptions[i])) {
       optionsProcessed.add(passedInOptions[i]);
       errors.push(`Unknown item '${passedInOptions[i]}' provided`);
@@ -86,9 +79,7 @@ export function extractOptionsFromDenoArgs(
       continue;
     }
 
-    console.log('After first continue');
-
-    let optionObject = optionsMap.get(passedInOptions[i])!;
+    const optionObject = optionsMap.get(passedInOptions[i])!;
 
     let alreadyProcessed = false;
     optionObject.signatures.forEach((signature: string) => {
@@ -108,7 +99,6 @@ export function extractOptionsFromDenoArgs(
       continue;
     }
 
-    // console.log('After second return');
     optionsProcessed.add(passedInOptions[i]);
 
     optionObject.value = passedInOptions.slice(i + 1, i + optionObject.arg_count + 1);
@@ -121,60 +111,9 @@ export function extractOptionsFromDenoArgs(
 
       i += ndx + 1;
     }
-    // console.log(`optionObject.value: ${optionObject.value}`);
+
     i += optionObject.arg_count + 1;
   }
-
-  /*
-  passedInOptions.forEach((option: string) => {
-    // If this option is a value, then set it on the last option that was
-    // processed
-    if (lastOptionObject && isValue) {
-      if (lastOptionObject.value instanceof Array) {
-        lastOptionObject.value[i++] = option;
-      }
-      // Reset the variables used to set values on a last option processed
-      lastOptionObject = null;
-      isValue = false;
-      return;
-    }
-
-    // If this option is not in the options map, then we have no idea what it
-    // is. The user made a mistake, so tell them they passed in an unknown item.
-    if (!optionsMap.has(option)) {
-      optionsProcessed.push(option);
-      errors.push(`Unknown item '${option}' provided`);
-      return;
-    }
-
-    // If we get here, then we have an option that is defined in this CLI. Let's
-    // track it and proceed to check if it requires a value.
-    const optionObject = optionsMap.get(option)!;
-    lastOptionObject = optionObject;
-
-    // If we already processed this option, then tell the user it was provided
-    // more than once. Options should only be passed in once.
-    let alreadyProcessed = false;
-    optionObject.signatures.forEach((signature: string) => {
-      if (optionsProcessed.indexOf(signature) !== -1) {
-        alreadyProcessed = true;
-      }
-    });
-
-
-    // If this option takes a value, then set the flag to say that the next
-    // option is the value
-    if (optionObject.takes_value) {
-      isValue = true;
-      return;
-    }
-
-    // If we get here, then the option currently being processed does not
-    // require a value. It just needs to "exist" in the command line, so we set
-    // its value to true. We set it to true so when `this.option("option")` is
-    // called from the command or subcommand class, it evaluates to true.
-  });
-  */
 
   return errors;
 }
@@ -249,19 +188,18 @@ export function setOptionsMapInitialValues(
     // For each option signature specified ...
     split.forEach((signature: string) => {
       // ... trim leading/trailing spaces that might be in the signature ...
-      let openBracketNdx = signature.indexOf('[');
+      const openBracketNdx = signature.indexOf('[');
 
       if (openBracketNdx === -1) {
         signature = signature.trim();
       } else {
         optionObject.takes_value = true;
-        let sig = signature.substring(0, openBracketNdx).trim();
-        let argStr = signature.substring(openBracketNdx);
+        const sig = signature.substring(0, openBracketNdx).trim();
+        const argStr = signature.substring(openBracketNdx);
         signature = sig;
-        let switchFlag: boolean = false;
-        let argCount: number = 0;
+        let switchFlag = false;
+        let argCount = 0;
 
-        // console.log(`signature: ${signature}`);
         for (const c of argStr) {
           switch (c) {
             case '[':
@@ -277,7 +215,6 @@ export function setOptionsMapInitialValues(
               }
 
               switchFlag = !switchFlag;
-              // console.log('Right bracket found!');
               argCount++;
 
               break;
@@ -299,14 +236,6 @@ export function setOptionsMapInitialValues(
         }
 
         // ... and check to see if it takes in a value
-        /*
-        if (signature.includes("[value]")) {
-          // If it takes in a value, then remove the `[value]` portion ...
-          signature = signature.replace(/\s+\[value\]/, "").trim();
-          // ... and set the option object's `takes_value` flag to true
-          optionObject.takes_value = true;
-        }
-        */
 
         // Once done, add all signatures that this option has ...
         optionObject.value = new Array(argCount);
@@ -317,7 +246,6 @@ export function setOptionsMapInitialValues(
         // command's options Map
       }
 
-      // console.log(`before setting optionsMap, optionObject: ${JSON.stringify(optionObject)}`);
       optionsMap.set(signature, optionObject);
 
     });
@@ -347,10 +275,8 @@ function getLastOptionIndex(
   const optionsProcessed: string[] = [];
 
   denoArgs.forEach((arg: string, index: number) => {
-    // console.log(`arg: ${arg}`);
     if (optionsMap.has(arg)) {
       const option = optionsMap.get(arg)!;
-      // console.log(`option: ${JSON.stringify(option)}`);
       let alreadyProcessed = false;
       option.signatures.forEach((signature: string) => {
         if (optionsProcessed.indexOf(signature) !== -1) {
@@ -364,10 +290,8 @@ function getLastOptionIndex(
       }
 
       lastOptionIndex = index;
-      let optionObject = optionsMap.get(arg);
-      // console.log(`optionObject: ${JSON.stringify(optionObject)}`);
+      const optionObject = optionsMap.get(arg);
       if (optionObject!.takes_value && optionObject!.value instanceof Array) {
-          // console.log(`optionObject!.value.length: ${optionObject!.value.length}`);
           lastOptionIndex += optionObject!.value.length;
       }
 
@@ -375,7 +299,6 @@ function getLastOptionIndex(
     }
   });
 
-  // console.log(`lastOptionIndex: ${lastOptionIndex}`);
 
   return lastOptionIndex;
 }
