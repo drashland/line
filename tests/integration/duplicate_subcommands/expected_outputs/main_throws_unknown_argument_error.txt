@@ -1,0 +1,10 @@
+[31m[ERROR] [39mCommand 'main' used incorrectly. Error(s) found:
+
+  * Unknown argument(s) provided: main.
+
+USAGE
+
+    main [option]
+    main [subcommand]
+
+    Run `main --help` for more information.

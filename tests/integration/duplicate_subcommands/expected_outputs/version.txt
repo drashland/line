@@ -1,0 +1,1 @@
+A main command with a subcommand. v1.0.0

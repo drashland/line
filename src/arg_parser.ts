@@ -26,11 +26,6 @@ export function extractArgumentsFromDenoArgs(
   // Remove the command from the signature. We only care about its arguments.
   commandSignature = commandSignature.replace(commandName, "").trim();
 
-  // Remove the command from the command line. We only care about the arguments
-  // passed in.
-  const commandIndex = denoArgs.indexOf(commandName);
-  denoArgs = denoArgs.slice(commandIndex + 1, denoArgs.length);
-
   // Match the arguments in the command line to arguments in the command
   // signature
   for (const [argName, argObject] of argsMap.entries()) {
