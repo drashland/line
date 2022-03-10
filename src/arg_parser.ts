@@ -65,8 +65,10 @@ export function extractOptionsFromDenoArgs(
   denoArgs: string[],
   optionsMap: Map<string, IOption>,
 ): string[] | undefined {
+  // console.log('extractOptionsFromDenoArgs called');
   const errors: string[] = [];
   const passedInOptions = getOptionsPassedIntoDenoArgs(denoArgs, optionsMap);
+  // console.log(`passedInOptions: ${passedInOptions}`);
 
   const optionsProcessed = new Set();
   let i = 0;
@@ -170,6 +172,7 @@ export function setOptionsMapInitialValues(
   options: TOption,
   optionsMap: Map<string, IOption>,
 ): void {
+  // console.log(`options: ${JSON.stringify(options)}`);
   for (const optionSignatures in options) {
     // Create the option object that get stored in the options Map. This will be
     // mutated down below if needed.
@@ -192,6 +195,7 @@ export function setOptionsMapInitialValues(
 
       if (openBracketNdx === -1) {
         signature = signature.trim();
+        // console.log(`In if statement of setOptionsMapInitialValues, signature = ${signature}`);
       } else {
         optionObject.takes_value = true;
         const sig = signature.substring(0, openBracketNdx).trim();
@@ -238,18 +242,21 @@ export function setOptionsMapInitialValues(
         // ... and check to see if it takes in a value
 
         // Once done, add all signatures that this option has ...
-        optionObject.value = new Array(argCount);
         optionObject.arg_count = argCount;
 
-        optionObject.signatures.push(signature);
+        // console.log(`In setOptionsMapInitialValues, signature = ${signature}`);
         // ... and set this option -- identifiable by signature -- in the
         // command's options Map
       }
 
+      optionObject.signatures.push(signature);
+      // console.log(`In setOptionsMapInitialValues, optionObject = ${JSON.stringify(optionObject)}`);
       optionsMap.set(signature, optionObject);
 
     });
   }
+
+  // console.log(`In setOptionsMapInitialValues, optionsMap: ${JSON.stringify(optionsMap)}`);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

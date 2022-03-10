@@ -128,6 +128,8 @@ export abstract class Command {
       this.options_map,
     );
 
+    // console.log(`In setUp, this.options_map: ${JSON.stringify(this.options_map)}`);
+
     this.takes_arguments = this.arguments_map.size > 0;
     this.takes_options = this.options_map.size > 0;
   }
@@ -165,6 +167,7 @@ export abstract class Command {
 
     if (this.takes_options) {
       const optionsProcessed: string[] = [];
+      // console.log(`this.options_map: ${JSON.stringify(this.options_map)}`);
       for (const [option, optionObject] of this.options_map.entries()) {
         let alreadyProcessed = false;
         optionObject.signatures.forEach((signature: string) => {
@@ -172,6 +175,8 @@ export abstract class Command {
             alreadyProcessed = true;
           }
         });
+
+        // console.log(`In getHelpMenuOptions, optionObject = ${JSON.stringify(optionObject)}`);
         if (!alreadyProcessed) {
           help += `\n    ${optionObject.signatures.join(", ")}\n`;
           help += `        ${optionObject.description}`;
@@ -184,6 +189,7 @@ export abstract class Command {
   }
 
   protected validateDenoArgs(denoArgs: string[]): string[] {
+    // console.log('Beg of validateDenoArgs');
     const optionsErrors = argParser.extractOptionsFromDenoArgs(
       denoArgs,
       this.options_map,
