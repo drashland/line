@@ -22,14 +22,21 @@ export function extractArgumentsFromDenoArgs(
 ): string[] {
   const errors: string[] = [];
 
+  // console.log(`denoArgs: ${denoArgs}`);
   // Remove the command from the signature. We only care about its arguments.
+  // console.log(`before commandSignature: ${commandSignature}`);
   commandSignature = commandSignature.replace(commandName, "").trim();
+  // console.log(`after commandSignature: ${commandSignature}`);
 
   // Match the arguments in the command line to arguments in the command
   // signature
   for (const [argName, argObject] of argsMap.entries()) {
     // The first item is the arg value
     const argValue = denoArgs[0];
+
+    // console.log(`argName: ${argName}`);
+    // console.log(`argValue: ${argValue}`);
+    // console.log(`argObject: ${JSON.stringify(argObject)}`);
 
     if (!argValue) {
       errors.push(`Argument '${argName}' is missing`);
@@ -40,6 +47,8 @@ export function extractArgumentsFromDenoArgs(
       denoArgs.splice(0, 1);
     }
   }
+  
+  // console.log(`In extractArgumentsFromDenoArgs, argsMap = ${JSON.stringify(argsMap)}`);
 
   // At this point, all of the `Deno.args` should be extracted. The `Deno.args`
   // array should contain 0 elements. If there are any elements left, then too
@@ -68,7 +77,9 @@ export function extractOptionsFromDenoArgs(
   // console.log('extractOptionsFromDenoArgs called');
   const errors: string[] = [];
   const passedInOptions = getOptionsPassedIntoDenoArgs(denoArgs, optionsMap);
-  // console.log(`passedInOptions: ${passedInOptions}`);
+  // console.log(`In extractOptionsFromDenoArgs, denoArgs = ${denoArgs}`);
+  // console.log(`In extractOptionsFromDenoArgs, passedInOptions: ${passedInOptions}`);
+  
 
   const optionsProcessed = new Set();
   let i = 0;
@@ -298,14 +309,15 @@ function getLastOptionIndex(
 
       lastOptionIndex = index;
       const optionObject = optionsMap.get(arg);
-      if (optionObject!.takes_value && optionObject!.value instanceof Array) {
-          lastOptionIndex += optionObject!.value.length;
+      if (optionObject!.takes_value) {
+          lastOptionIndex += optionObject!.arg_count;
       }
 
       optionsProcessed.push(arg);
     }
   });
 
+  // console.log(`lastOptionIndex: ${lastOptionIndex}`);
 
   return lastOptionIndex;
 }
@@ -327,6 +339,7 @@ function getOptionsPassedIntoDenoArgs(
 ): string[] {
   // First, we get the index of the last option (and its value if it requires
   // one)
+  // console.log(`In getOptionsPassedIntoDenoArgs, denoArgs = ${denoArgs}`);
   const lastOptionIndex = getLastOptionIndex(denoArgs, optionsMap);
 
   // Next, we splice `Deno.args` from the beginning til the last option (and its
