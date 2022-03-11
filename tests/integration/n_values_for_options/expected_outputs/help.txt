@@ -1,0 +1,20 @@
+A main command with multiple arguments for options. - Options with multiple arguments
+
+USAGE
+
+    main [option]
+
+
+OPTIONS
+
+    -h, --help
+        Show this menu.
+    -v, --version
+        Show this CLI's version.
+
+    -L, --log-value
+        Log value
+    --some-option
+        some description
+    --some-option-1
+        some description 1

@@ -107,14 +107,14 @@ Deno.test("should show contents with extra log value: read -L file_to_read.txt",
   const stdout = await run(
     "read -L SomeValue tests/integration/file_manager_with_options/file_to_read.txt",
   );
-  asserts.assertEquals(stdout, "[ \x1b[32m\"SomeValue\"\x1b[39m ]\nYOU SHALL NOT PASS");
+  asserts.assertEquals(stdout, "[ \"SomeValue\" ]\nYOU SHALL NOT PASS");
 });
 
 Deno.test("should do a dry run and add an extra log value: read -L --dry-run file_to_read.txt", async () => {
   const stdout = await run(
     "read -L SomeValue --dry-run tests/integration/file_manager_with_options/file_to_read.txt",
   );
-  asserts.assertEquals(stdout, "[ \x1b[32m\"SomeValue\"\x1b[39m ]\nFile exists.");
+  asserts.assertEquals(stdout, "[ \"SomeValue\" ]\nFile exists.");
 });
 
 Deno.test("should show file does not exist: read -D read", async () => {
