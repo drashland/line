@@ -47,7 +47,7 @@ export function extractArgumentsFromDenoArgs(
       denoArgs.splice(0, 1);
     }
   }
-  
+
   // console.log(`In extractArgumentsFromDenoArgs, argsMap = ${JSON.stringify(argsMap)}`);
 
   // At this point, all of the `Deno.args` should be extracted. The `Deno.args`
@@ -56,8 +56,6 @@ export function extractArgumentsFromDenoArgs(
   if (denoArgs.length > 0) {
     errors.push(`Unknown argument(s) provided: ${denoArgs.join(", ")}.`);
   }
-
-
 
   return errors;
 }
@@ -79,7 +77,6 @@ export function extractOptionsFromDenoArgs(
   const passedInOptions = getOptionsPassedIntoDenoArgs(denoArgs, optionsMap);
   // console.log(`In extractOptionsFromDenoArgs, denoArgs = ${denoArgs}`);
   // console.log(`In extractOptionsFromDenoArgs, passedInOptions: ${passedInOptions}`);
-  
 
   const optionsProcessed = new Set();
   let i = 0;
@@ -114,12 +111,19 @@ export function extractOptionsFromDenoArgs(
 
     optionsProcessed.add(passedInOptions[i]);
 
-    optionObject.value = passedInOptions.slice(i + 1, i + optionObject.arg_count + 1);
+    optionObject.value = passedInOptions.slice(
+      i + 1,
+      i + optionObject.arg_count + 1,
+    );
 
     let ndx = -1;
-    if ((ndx = optionObject.value.findIndex((optArg: string) => optionsMap.has(optArg))) !== -1) {
+    if (
+      (ndx = optionObject.value.findIndex((optArg: string) =>
+        optionsMap.has(optArg)
+      )) !== -1
+    ) {
       errors.push(
-        `Option ${passedInOptions[i]}, has the wrong number of arguments`
+        `Option ${passedInOptions[i]}, has the wrong number of arguments`,
       );
 
       i += ndx + 1;
@@ -202,7 +206,7 @@ export function setOptionsMapInitialValues(
     // For each option signature specified ...
     split.forEach((signature: string) => {
       // ... trim leading/trailing spaces that might be in the signature ...
-      const openBracketNdx = signature.indexOf('[');
+      const openBracketNdx = signature.indexOf("[");
 
       if (openBracketNdx === -1) {
         signature = signature.trim();
@@ -217,25 +221,29 @@ export function setOptionsMapInitialValues(
 
         for (const c of argStr) {
           switch (c) {
-            case '[':
+            case "[":
               if (switchFlag === true) {
-                throw new Error("Left open bracket after another left open bracket found.");
+                throw new Error(
+                  "Left open bracket after another left open bracket found.",
+                );
               }
 
               switchFlag = !switchFlag;
               break;
-            case ']':
+            case "]":
               if (switchFlag === false) {
-                throw new Error("Right open bracket has no matching left open bracket");
+                throw new Error(
+                  "Right open bracket has no matching left open bracket",
+                );
               }
 
               switchFlag = !switchFlag;
               argCount++;
 
               break;
-            case ' ':
-            case '\t':
-            case '\n':
+            case " ":
+            case "\t":
+            case "\n":
               if (switchFlag === true) {
                 throw new Error("White space char inside brackets");
               }
@@ -243,7 +251,7 @@ export function setOptionsMapInitialValues(
               break;
             default:
               if (switchFlag === false) {
-                  throw new Error("Non white-space character outside bracket");
+                throw new Error("Non white-space character outside bracket");
               }
 
               break;
@@ -263,7 +271,6 @@ export function setOptionsMapInitialValues(
       optionObject.signatures.push(signature);
       // console.log(`In setOptionsMapInitialValues, optionObject = ${JSON.stringify(optionObject)}`);
       optionsMap.set(signature, optionObject);
-
     });
   }
 
@@ -310,7 +317,7 @@ function getLastOptionIndex(
       lastOptionIndex = index;
       const optionObject = optionsMap.get(arg);
       if (optionObject!.takes_value) {
-          lastOptionIndex += optionObject!.arg_count;
+        lastOptionIndex += optionObject!.arg_count;
       }
 
       optionsProcessed.push(arg);

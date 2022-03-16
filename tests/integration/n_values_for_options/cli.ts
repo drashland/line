@@ -16,15 +16,15 @@ class MainCommand extends Line.MainCommand {
     const someOption1 = this.option("--some-option-1");
 
     if (logValue) {
-        console.log(`logValue: ${logValue}`);
+      console.log(`logValue: ${logValue}`);
     }
 
     if (someOption) {
-        console.log(`someOption: ${someOption}`);
+      console.log(`someOption: ${someOption}`);
     }
 
     if (someOption1) {
-        console.log(`someOption1: ${someOption1}`);
+      console.log(`someOption1: ${someOption1}`);
     }
   }
 }

@@ -73,6 +73,11 @@ Deno.test("should print out multiple arguments for option --some-option", async 
 });
 
 Deno.test("should handle multiple options with multiple arguments correctly", async () => {
-  const stdout = await run("--some-option hello world --some-option-1 foo bar baz");
-  asserts.assertEquals(stdout, "someOption: hello,world\nsomeOption1: foo,bar,baz");
+  const stdout = await run(
+    "--some-option hello world --some-option-1 foo bar baz",
+  );
+  asserts.assertEquals(
+    stdout,
+    "someOption: hello,world\nsomeOption1: foo,bar,baz",
+  );
 });
