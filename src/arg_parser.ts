@@ -22,11 +22,8 @@ export function extractArgumentsFromDenoArgs(
 ): string[] {
   const errors: string[] = [];
 
-  // console.log(`denoArgs: ${denoArgs}`);
   // Remove the command from the signature. We only care about its arguments.
-  // console.log(`before commandSignature: ${commandSignature}`);
   commandSignature = commandSignature.replace(commandName, "").trim();
-  // console.log(`after commandSignature: ${commandSignature}`);
 
   // Match the arguments in the command line to arguments in the command
   // signature
@@ -34,9 +31,6 @@ export function extractArgumentsFromDenoArgs(
     // The first item is the arg value
     const argValue = denoArgs[0];
 
-    // console.log(`argName: ${argName}`);
-    // console.log(`argValue: ${argValue}`);
-    // console.log(`argObject: ${JSON.stringify(argObject)}`);
 
     if (!argValue) {
       errors.push(`Argument '${argName}' is missing`);
@@ -47,8 +41,6 @@ export function extractArgumentsFromDenoArgs(
       denoArgs.splice(0, 1);
     }
   }
-
-  // console.log(`In extractArgumentsFromDenoArgs, argsMap = ${JSON.stringify(argsMap)}`);
 
   // At this point, all of the `Deno.args` should be extracted. The `Deno.args`
   // array should contain 0 elements. If there are any elements left, then too
@@ -72,11 +64,8 @@ export function extractOptionsFromDenoArgs(
   denoArgs: string[],
   optionsMap: Map<string, IOption>,
 ): string[] | undefined {
-  // console.log('extractOptionsFromDenoArgs called');
   const errors: string[] = [];
   const passedInOptions = getOptionsPassedIntoDenoArgs(denoArgs, optionsMap);
-  // console.log(`In extractOptionsFromDenoArgs, denoArgs = ${denoArgs}`);
-  // console.log(`In extractOptionsFromDenoArgs, passedInOptions: ${passedInOptions}`);
 
   const optionsProcessed = new Set();
   let i = 0;
@@ -187,7 +176,6 @@ export function setOptionsMapInitialValues(
   options: TOption,
   optionsMap: Map<string, IOption>,
 ): void {
-  // console.log(`options: ${JSON.stringify(options)}`);
   for (const optionSignatures in options) {
     // Create the option object that get stored in the options Map. This will be
     // mutated down below if needed.
@@ -210,7 +198,6 @@ export function setOptionsMapInitialValues(
 
       if (openBracketNdx === -1) {
         signature = signature.trim();
-        // console.log(`In if statement of setOptionsMapInitialValues, signature = ${signature}`);
       } else {
         optionObject.takes_value = true;
         const sig = signature.substring(0, openBracketNdx).trim();
@@ -263,18 +250,15 @@ export function setOptionsMapInitialValues(
         // Once done, add all signatures that this option has ...
         optionObject.arg_count = argCount;
 
-        // console.log(`In setOptionsMapInitialValues, signature = ${signature}`);
         // ... and set this option -- identifiable by signature -- in the
         // command's options Map
       }
 
       optionObject.signatures.push(signature);
-      // console.log(`In setOptionsMapInitialValues, optionObject = ${JSON.stringify(optionObject)}`);
       optionsMap.set(signature, optionObject);
     });
   }
 
-  // console.log(`In setOptionsMapInitialValues, optionsMap: ${JSON.stringify(optionsMap)}`);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -324,8 +308,6 @@ function getLastOptionIndex(
     }
   });
 
-  // console.log(`lastOptionIndex: ${lastOptionIndex}`);
-
   return lastOptionIndex;
 }
 
@@ -346,7 +328,6 @@ function getOptionsPassedIntoDenoArgs(
 ): string[] {
   // First, we get the index of the last option (and its value if it requires
   // one)
-  // console.log(`In getOptionsPassedIntoDenoArgs, denoArgs = ${denoArgs}`);
   const lastOptionIndex = getLastOptionIndex(denoArgs, optionsMap);
 
   // Next, we splice `Deno.args` from the beginning til the last option (and its
