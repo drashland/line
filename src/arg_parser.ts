@@ -31,7 +31,6 @@ export function extractArgumentsFromDenoArgs(
     // The first item is the arg value
     const argValue = denoArgs[0];
 
-
     if (!argValue) {
       errors.push(`Argument '${argName}' is missing`);
     } else {
@@ -258,7 +257,6 @@ export function setOptionsMapInitialValues(
       optionsMap.set(signature, optionObject);
     });
   }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
