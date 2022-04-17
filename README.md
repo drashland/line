@@ -5,7 +5,7 @@
 
 <img align="right" src="./logo.svg" alt="Drash Land - Line logo" width="150" style="max-width: 150px">
 
-Line is a class-based, command-line interface (CLI) framework.
+Line is a class-based, command-line interface (CLI) framework for Deno.
 
 View the full documentation at https://drash.land/line.
 
