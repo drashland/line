@@ -1,7 +1,7 @@
 import * as Line from "../../../mod.ts";
 
 const decoder = new TextDecoder();
-const encoder = new TextEncoder();
+const _encoder = new TextEncoder();
 
 class Main extends Line.MainCommand {
   public subcommands = [

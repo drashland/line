@@ -62,43 +62,26 @@ export function extractArgumentsFromDenoArgs(
 export function extractOptionsFromDenoArgs(
   denoArgs: string[],
   optionsMap: Map<string, IOption>,
-): string[] {
+): string[] | undefined {
   const errors: string[] = [];
   const passedInOptions = getOptionsPassedIntoDenoArgs(denoArgs, optionsMap);
 
-  let isValue = false;
-  let lastOptionObject: IOption | null = null;
-  const optionsProcessed: string[] = [];
+  const optionsProcessed = new Set();
+  let i = 0;
 
-  passedInOptions.forEach((option: string) => {
-    // If this option is a value, then set it on the last option that was
-    // processed
-    if (lastOptionObject && isValue) {
-      lastOptionObject.value = option;
-      // Reset the variables used to set values on a last option processed
-      lastOptionObject = null;
-      isValue = false;
-      return;
+  while (i < passedInOptions.length) {
+    if (!optionsMap.has(passedInOptions[i])) {
+      optionsProcessed.add(passedInOptions[i]);
+      errors.push(`Unknown item '${passedInOptions[i]}' provided`);
+      i++;
+      continue;
     }
 
-    // If this option is not in the options map, then we have no idea what it
-    // is. The user made a mistake, so tell them they passed in an unknown item.
-    if (!optionsMap.has(option)) {
-      optionsProcessed.push(option);
-      errors.push(`Unknown item '${option}' provided`);
-      return;
-    }
+    const optionObject = optionsMap.get(passedInOptions[i])!;
 
-    // If we get here, then we have an option that is defined in this CLI. Let's
-    // track it and proceed to check if it requires a value.
-    const optionObject = optionsMap.get(option)!;
-    lastOptionObject = optionObject;
-
-    // If we already processed this option, then tell the user it was provided
-    // more than once. Options should only be passed in once.
     let alreadyProcessed = false;
     optionObject.signatures.forEach((signature: string) => {
-      if (optionsProcessed.indexOf(signature) !== -1) {
+      if (optionsProcessed.has(signature)) {
         alreadyProcessed = true;
       }
     });
@@ -109,24 +92,33 @@ export function extractOptionsFromDenoArgs(
           optionObject.signatures.join(", ")
         }' was provided more than once`,
       );
-      return;
+
+      i++;
+      continue;
     }
 
-    optionsProcessed.push(option);
+    optionsProcessed.add(passedInOptions[i]);
 
-    // If this option takes a value, then set the flag to say that the next
-    // option is the value
-    if (optionObject.takes_value) {
-      isValue = true;
-      return;
+    optionObject.value = passedInOptions.slice(
+      i + 1,
+      i + optionObject.arg_count + 1,
+    );
+
+    let ndx = -1;
+    if (
+      (ndx = optionObject.value.findIndex((optArg: string) =>
+        optionsMap.has(optArg)
+      )) !== -1
+    ) {
+      errors.push(
+        `Option ${passedInOptions[i]}, has the wrong number of arguments`,
+      );
+
+      i += ndx + 1;
     }
 
-    // If we get here, then the option currently being processed does not
-    // require a value. It just needs to "exist" in the command line, so we set
-    // its value to true. We set it to true so when `this.option("option")` is
-    // called from the command or subcommand class, it evaluates to true.
-    lastOptionObject.value = true;
-  });
+    i += optionObject.arg_count + 1;
+  }
 
   return errors;
 }
@@ -189,6 +181,7 @@ export function setOptionsMapInitialValues(
     const optionObject: IOption = {
       description: options[optionSignatures],
       signatures: [],
+      arg_count: 0,
       // deno-lint-ignore camelcase
       takes_value: false,
     };
@@ -200,20 +193,67 @@ export function setOptionsMapInitialValues(
     // For each option signature specified ...
     split.forEach((signature: string) => {
       // ... trim leading/trailing spaces that might be in the signature ...
-      signature = signature.trim();
+      const openBracketNdx = signature.indexOf("[");
 
-      // ... and check to see if it takes in a value
-      if (signature.includes("[value]")) {
-        // If it takes in a value, then remove the `[value]` portion ...
-        signature = signature.replace(/\s+\[value\]/, "").trim();
-        // ... and set the option object's `takes_value` flag to true
+      if (openBracketNdx === -1) {
+        signature = signature.trim();
+      } else {
         optionObject.takes_value = true;
+        const sig = signature.substring(0, openBracketNdx).trim();
+        const argStr = signature.substring(openBracketNdx);
+        signature = sig;
+        let switchFlag = false;
+        let argCount = 0;
+
+        for (const c of argStr) {
+          switch (c) {
+            case "[":
+              if (switchFlag === true) {
+                throw new Error(
+                  "Left open bracket after another left open bracket found.",
+                );
+              }
+
+              switchFlag = !switchFlag;
+              break;
+            case "]":
+              if (switchFlag === false) {
+                throw new Error(
+                  "Right open bracket has no matching left open bracket",
+                );
+              }
+
+              switchFlag = !switchFlag;
+              argCount++;
+
+              break;
+            case " ":
+            case "\t":
+            case "\n":
+              if (switchFlag === true) {
+                throw new Error("White space char inside brackets");
+              }
+
+              break;
+            default:
+              if (switchFlag === false) {
+                throw new Error("Non white-space character outside bracket");
+              }
+
+              break;
+          }
+        }
+
+        // ... and check to see if it takes in a value
+
+        // Once done, add all signatures that this option has ...
+        optionObject.arg_count = argCount;
+
+        // ... and set this option -- identifiable by signature -- in the
+        // command's options Map
       }
 
-      // Once done, add all signatures that this option has ...
       optionObject.signatures.push(signature);
-      // ... and set this option -- identifiable by signature -- in the
-      // command's options Map
       optionsMap.set(signature, optionObject);
     });
   }
@@ -257,9 +297,11 @@ function getLastOptionIndex(
       }
 
       lastOptionIndex = index;
-      if (optionsMap.get(arg)!.takes_value) {
-        lastOptionIndex = index + 1;
+      const optionObject = optionsMap.get(arg);
+      if (optionObject!.takes_value) {
+        lastOptionIndex += optionObject!.arg_count;
       }
+
       optionsProcessed.push(arg);
     }
   });
